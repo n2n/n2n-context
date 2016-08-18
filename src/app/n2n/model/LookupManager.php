@@ -23,18 +23,18 @@ namespace n2n\model;
 
 use n2n\util\UnserializationFailedException;
 use n2n\core\ShutdownListener;
-use n2n\N2N;
+use n2n\core\N2N;
 use n2n\reflection\ReflectionUtils;
 use n2n\core\container\N2nContext;
 use n2n\reflection\ReflectionContext;
 use n2n\util\cache\CacheStore;
-use n2n\http\HttpContextNotAvailableException;
+use n2n\web\http\HttpContextNotAvailableException;
 use n2n\util\StringUtils;
 use n2n\util\ex\IllegalStateException;
 use n2n\reflection\annotation\PropertyAnnotation;
 use n2n\reflection\magic\MagicUtils;
 use n2n\reflection\magic\MagicMethodInvoker;
-use n2n\http\Session;
+use n2n\web\http\Session;
 use n2n\model\annotation\AnnoSessionScoped;
 use n2n\model\annotation\AnnoApplicationScoped;
 
