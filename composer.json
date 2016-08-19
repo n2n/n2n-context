@@ -2,7 +2,7 @@
     "name": "n2n/n2n-context",
     "type": "library",
     "description": "n2n context",
-    "keywords": ["framework","awesome"],
+    "keywords": ["n2n", "context", "scope", "request scope", "session scope", "application scope"],
     "homepage": "http://n2n.rocks/",
     "license": "GNU LGPL",
     "authors": [
