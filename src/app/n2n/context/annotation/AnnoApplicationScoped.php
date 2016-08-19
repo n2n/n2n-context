@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\model\annotation;
+namespace n2n\context\annotation;
 
 use n2n\reflection\annotation\PropertyAnnotation;
 use n2n\reflection\annotation\PropertyAnnotationTrait;

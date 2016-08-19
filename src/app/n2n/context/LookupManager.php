@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\model;
+namespace n2n\context;
 
 use n2n\util\UnserializationFailedException;
 use n2n\core\ShutdownListener;
@@ -35,8 +35,8 @@ use n2n\reflection\annotation\PropertyAnnotation;
 use n2n\reflection\magic\MagicUtils;
 use n2n\reflection\magic\MagicMethodInvoker;
 use n2n\web\http\Session;
-use n2n\model\annotation\AnnoSessionScoped;
-use n2n\model\annotation\AnnoApplicationScoped;
+use n2n\context\annotation\AnnoSessionScoped;
+use n2n\context\annotation\AnnoApplicationScoped;
 
 class LookupManager implements ShutdownListener {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
@@ -145,10 +145,10 @@ class LookupManager implements ShutdownListener {
 	 */
 	private function checkoutLookupable(\ReflectionClass $class) {
 		$annotationSet = ReflectionContext::getAnnotationSet($class);
-		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\model\annotation\AnnoSessionScoped') as $annotation) {
+		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\context\annotation\AnnoSessionScoped') as $annotation) {
 			throw $this->createErrorException($annotation);
 		}
-		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\model\annotation\AnnoApplicationScoped') as $annotation) {
+		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\context\annotation\AnnoApplicationScoped') as $annotation) {
 			throw $this->createErrorException($annotation);
 		}
 		
@@ -179,7 +179,7 @@ class LookupManager implements ShutdownListener {
 	 */
 	private function checkForSessionProperties(\ReflectionClass $class, $obj) {
 		$annotationSet = ReflectionContext::getAnnotationSet($class);
-		if (!$annotationSet->containsPropertyAnnotationName('n2n\model\annotation\AnnoSessionScoped')) {
+		if (!$annotationSet->containsPropertyAnnotationName('n2n\context\annotation\AnnoSessionScoped')) {
 			return;
 		}
 		
@@ -191,7 +191,7 @@ class LookupManager implements ShutdownListener {
 					. $class->getName(), 0, $e);
 		}
 		
-		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\model\annotation\AnnoSessionScoped') as $sessionScopedAnno) {
+		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\context\annotation\AnnoSessionScoped') as $sessionScopedAnno) {
 			$property = $sessionScopedAnno->getAnnotatedProperty();
 			$propertyName = $property->getName();
 			
