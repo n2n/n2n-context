@@ -225,7 +225,7 @@ class LookupManager implements ShutdownListener {
 		
 		$session = null;
 		try {
-			$session = $this->n2nContext->getSession();
+			$session = $this->n2nContext->getHttpContext()->getSession();
 		} catch (HttpContextNotAvailableException $e) {
 			throw new LookupFailedException('Could not check out session model: ' . $class->getName(), 0, $e);
 		}
