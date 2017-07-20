@@ -24,6 +24,7 @@ namespace n2n\context;
 use n2n\util\UnserializationFailedException;
 use n2n\util\StringUtils;
 use n2n\reflection\ReflectionUtils;
+use n2n\reflection\property\TypeConstraint;
 
 class SerDataReader {
 	private $attrs;
