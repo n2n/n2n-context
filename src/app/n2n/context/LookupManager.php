@@ -35,7 +35,6 @@ use n2n\reflection\annotation\PropertyAnnotation;
 use n2n\reflection\magic\MagicUtils;
 use n2n\reflection\magic\MagicMethodInvoker;
 use n2n\web\http\Session;
-use n2n\context\annotation\AnnoSessionScoped;
 use n2n\context\annotation\AnnoApplicationScoped;
 
 class LookupManager implements ShutdownListener {
