@@ -1,15 +1,15 @@
 {
     "name": "n2n/n2n-context",
     "type": "library",
-    "description": "Context support (request, session and application scope) for n2n framework. ",
+    "description": "Context support (request, session and application scope) for n2n framework.",
     "keywords": ["n2n", "context", "scope", "request scope", "session scope", "application scope"],
-    "homepage": "http://n2n.rocks/",
-    "license": "GNU LGPL",
+    "homepage": "https://n2n.rocks/",
+    "license": "LGPL-3.0-or-later",
     "authors": [
         {
             "name": "Andreas von Burg",
             "email": "a@von-burg.net",
-            "homepage": "http://www.von-burg.net"
+            "homepage": "https://www.von-burg.net/"
         }
     ],
     "require": {
