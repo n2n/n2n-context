@@ -23,8 +23,8 @@ namespace n2n\context;
 
 use n2n\util\UnserializationFailedException;
 use n2n\util\StringUtils;
-use n2n\reflection\ReflectionUtils;
 use n2n\reflection\property\TypeConstraint;
+use n2n\util\type\TypeUtils;
 
 class SerDataReader {
 	private $attrs;
@@ -55,7 +55,7 @@ class SerDataReader {
 		if (TypeConstraint::isValueA($value, $expectedType, $nullAllowed)) return $value;
 		
 		throw new UnserializationFailedException('Type ' . $expectedType . ' expected for serialized data attribute \'' 
-				. $name . '\'. Type ' . ReflectionUtils::getTypeInfo($value) . ' given.');
+				. $name . '\'. Type ' . TypeUtils::getTypeInfo($value) . ' given.');
 	}
 	
 	public function getInt($name, $nullAllowed = true) {
