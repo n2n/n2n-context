@@ -23,7 +23,7 @@ namespace n2n\context;
 
 use n2n\util\UnserializationFailedException;
 use n2n\util\StringUtils;
-use n2n\reflection\property\TypeConstraint;
+use n2n\util\type\TypeConstraint;
 use n2n\util\type\TypeUtils;
 
 class SerDataReader {
