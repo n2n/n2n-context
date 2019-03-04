@@ -23,7 +23,6 @@ namespace n2n\context;
 
 use n2n\util\UnserializationFailedException;
 use n2n\util\StringUtils;
-use n2n\util\type\TypeConstraint;
 use n2n\util\type\TypeUtils;
 
 class SerDataReader {
@@ -52,7 +51,7 @@ class SerDataReader {
 	private function getAndValidateType($name, $expectedType, $nullAllowed) {
 		$value = $this->get($name);
 		
-		if (TypeConstraint::isValueA($value, $expectedType, $nullAllowed)) return $value;
+		if (TypeUtils::isValueA($value, $expectedType, $nullAllowed)) return $value;
 		
 		throw new UnserializationFailedException('Type ' . $expectedType . ' expected for serialized data attribute \'' 
 				. $name . '\'. Type ' . TypeUtils::getTypeInfo($value) . ' given.');
