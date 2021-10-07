@@ -22,9 +22,7 @@
 
 namespace n2n\web\http\attribute;
 
-use Attribute;
-
-#[Attribute]
+#[\Attribute]
 class ApplicationScoped {
 
 }
