@@ -19,7 +19,7 @@
 		}
 	],
 	"minimum-stability" : "dev",
-	"prefer-stable": true,
+	"prefer-stable" : true,
 	"config" : {
 		"vendor-dir" : "src/vendor"
 	},

@@ -22,10 +22,7 @@
 namespace n2n\context;
 
 use n2n\util\UnserializationFailedException;
-use n2n\core\ShutdownListener;
-use n2n\core\N2N;
 use n2n\reflection\ReflectionUtils;
-use n2n\core\container\N2nContext;
 use n2n\reflection\ReflectionContext;
 use n2n\util\cache\CacheStore;
 use n2n\web\http\HttpContextNotAvailableException;
@@ -36,14 +33,15 @@ use n2n\reflection\magic\MagicUtils;
 use n2n\reflection\magic\MagicMethodInvoker;
 use n2n\web\http\Session;
 use n2n\context\annotation\AnnoApplicationScoped;
+use n2n\context\config\LookupSession;
+use n2n\util\magic\MagicContext;
 
-class LookupManager implements ShutdownListener {
+class LookupManager {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
 	const SESSION_CLASS_PROPERTY_KEY_SEPARATOR = '.';
 	const ON_SERIALIZE_METHOD = '_onSerialize';
 	const ON_UNSERIALIZE_METHOD = '_onUnserialize';
 	
-	private $n2nContext;
 	private $session;
 	private $cacheStore;
 	private $shutdownClosures = array();
@@ -51,11 +49,17 @@ class LookupManager implements ShutdownListener {
 	private $requestScope = array();
 	private $sessionScope = array();
 	private $applicationScope = array();
+	private $magicContext;
+
 	/**
-	 * @param N2nContext $n2nContext
+	 * @param LookupSession $lookupSession
+	 * @param CacheStore $applicationCacheStore
 	 */
-	public function __construct(N2nContext $n2nContext) {
-		$this->n2nContext = $n2nContext;
+	public function __construct(LookupSession $lookupSession, CacheStore $applicationCacheStore,
+	       MagicContext $magicContext) {
+	    $this->session = $lookupSession;
+	    $this->applicationCacheStore = $applicationCacheStore;
+	    $this->magicContext = $magicContext;
 	}
 	
 	public function clear() {
@@ -75,7 +79,7 @@ class LookupManager implements ShutdownListener {
 	 */
 	public function getCacheStore() {
 		if ($this->cacheStore === null) {
-			$this->cacheStore = $this->n2nContext->getAppCache()->lookupCacheStore(self::class);
+			$this->cacheStore = $this->session->getAppCache()->lookupCacheStore(self::class);
 		}
 		
 		return $this->cacheStore;
@@ -91,7 +95,7 @@ class LookupManager implements ShutdownListener {
 	 * @throws LookupFailedException
 	 * @return Lookupable
 	 */
-	public function lookup($className) {
+	public function lookup(string $className) {
 		if (empty($className)) {
 			throw new LookupFailedException('Name is empty.');
 		}
@@ -152,7 +156,7 @@ class LookupManager implements ShutdownListener {
 		}
 		
 		$obj = ReflectionUtils::createObject($class);
-		$this->n2nContext->magicInit($obj);
+		MagicUtils::init($obj, $this->magicContext);
 		return $obj;
 	}
 	/**
@@ -169,7 +173,7 @@ class LookupManager implements ShutdownListener {
 		$this->checkForSessionProperties($class, $obj);
 		$this->checkForApplicationProperties($class, $obj);
 		$this->requestScope[$class->getName()] = $obj;
-		$this->n2nContext->magicInit($obj);
+		MagicUtils::init($obj, $this->magicContext);
 		return $obj;
 	}
 	/**
@@ -184,7 +188,7 @@ class LookupManager implements ShutdownListener {
 		
 		$session = null;
 		try {
-			$session = $this->n2nContext->getHttpContext()->getSession();
+			$session = $this->session->getHttpContext()->getSession();
 		} catch (HttpContextNotAvailableException $e) {
 			throw new LookupFailedException('Could not check out session properties for: ' 
 					. $class->getName(), 0, $e);
@@ -198,16 +202,16 @@ class LookupManager implements ShutdownListener {
 			
 			$key = self::SESSION_KEY_PREFIX 
 					. $class->getName() . self::SESSION_CLASS_PROPERTY_KEY_SEPARATOR . $propertyName;
-			if ($session->has(N2N::NS, $key)) {
+			if ($session->has(LookupManager::class, $key)) {
 				try {
-					$property->setValue($obj, StringUtils::unserialize($session->get(N2N::NS, $key)));
+					$property->setValue($obj, StringUtils::unserialize($session->get(LookupManager::class, $key)));
 				} catch (UnserializationFailedException $e) { 
-					$session->remove(N2N::NS, $key);	
+					$session->remove(LookupManager::class, $key);	
 				}
 			}
 		
 			$this->shutdownClosures[] = function () use ($key, $session, $property, $obj) {
-				$session->set(N2N::NS, $key, serialize($property->getValue($obj)));
+				$session->set(LookupManager::class, $key, serialize($property->getValue($obj)));
 				$property->setValue($obj, null);
 			};
 		}
@@ -224,7 +228,7 @@ class LookupManager implements ShutdownListener {
 		
 		$session = null;
 		try {
-			$session = $this->n2nContext->getHttpContext()->getSession();
+			$session = $this->session->getHttpContext()->getSession();
 		} catch (HttpContextNotAvailableException $e) {
 			throw new LookupFailedException('Could not check out session model: ' . $class->getName(), 0, $e);
 		}
@@ -235,7 +239,7 @@ class LookupManager implements ShutdownListener {
 		if ($obj === null) {
 			$obj = ReflectionUtils::createObject($class);
 			$this->checkForApplicationProperties($class, $obj);
-			$this->n2nContext->magicInit($obj);
+			MagicUtils::init($obj, $this->magicContext);
 		}
 
 		$this->shutdownClosures[] = function () use ($key, $session, $class, $obj, $autoSerializable) {
@@ -246,9 +250,9 @@ class LookupManager implements ShutdownListener {
 	}
 	
 	private function readSessionModel(Session $session, $key, \ReflectionClass $class, $autoSerializable) {
-		if (!$session->has(N2N::NS, $key)) return null;
+		if (!$session->has(LookupManager::class, $key)) return null;
 		
-		$serData = $session->get(N2N::NS, $key);
+		$serData = $session->get(LookupManager::class, $key);
 		
 		if ($autoSerializable) {
 			try {
@@ -259,7 +263,7 @@ class LookupManager implements ShutdownListener {
 				}
 			} catch (UnserializationFailedException $e) {}
 			
-			$session->remove(N2N::NS, $key);
+			$session->remove(LookupManager::class, $key);
 			return null;
 		} 
 		
@@ -269,7 +273,7 @@ class LookupManager implements ShutdownListener {
 		try {
 			$this->callOnUnserialize($class, $obj, SerDataReader::createFromSerializedStr($serData));
 		} catch (UnserializationFailedException $e) {
-			$session->remove(N2N::NS, $key);
+			$session->remove(LookupManager::class, $key);
 			throw new LookupFailedException('Falied to unserialize session model: ' . $class->getName(), 0, $e);
 		}
 		
@@ -278,13 +282,13 @@ class LookupManager implements ShutdownListener {
 
 	private function writeSessionModel(Session $session, $key, $obj, \ReflectionClass $class, $autoSerializable) {
 		if ($autoSerializable) {
-			$session->set(N2N::NS, $key, serialize($obj));
+			$session->set(LookupManager::class, $key, serialize($obj));
 			return;
 		}
 
 		$serDataWriter = new SerDataWriter();
 		$this->callOnSerialize($class, $obj, $serDataWriter);
-		$session->set(N2N::NS, $key, $serDataWriter->serialize());
+		$session->set(LookupManager::class, $key, $serDataWriter->serialize());
 	}
 	/**
 	 * @param \ReflectionClass $class
@@ -353,7 +357,7 @@ class LookupManager implements ShutdownListener {
 		if ($obj === null) {
 			$obj = ReflectionUtils::createObject($class);
 			$this->checkForSessionProperties($class, $obj);
-			$this->n2nContext->magicInit($obj);
+			MagicUtils::init($obj, $this->magicContext);
 		}
 		
 		$this->shutdownClosures[] = function () use ($class, $obj, $autoSerializable, $serData) {
@@ -417,13 +421,13 @@ class LookupManager implements ShutdownListener {
 	}
 	
 	private function callOnUnserialize(\ReflectionClass $class, $obj, SerDataReader $serDataReader) {
-		$magicMethodInvoker = new MagicMethodInvoker($this->n2nContext);
+		$magicMethodInvoker = new MagicMethodInvoker($this->session);
 		$magicMethodInvoker->setClassParamObject(get_class($serDataReader), $serDataReader);
 		$this->callMagcMethods($class, self::ON_UNSERIALIZE_METHOD, $obj, $magicMethodInvoker);
 	}
 	
 	private function callOnSerialize(\ReflectionClass $class, $obj, SerDataWriter $serDataWriter) {
-		$magicMethodInvoker = new MagicMethodInvoker($this->n2nContext);
+		$magicMethodInvoker = new MagicMethodInvoker($this->session);
 		$magicMethodInvoker->setClassParamObject(get_class($serDataWriter), $serDataWriter);
 		$this->callMagcMethods($class, self::ON_SERIALIZE_METHOD, $obj, $magicMethodInvoker);
 	}
@@ -446,7 +450,7 @@ class LookupManager implements ShutdownListener {
 	/* (non-PHPdoc)
 	 * @see \n2n\core\ShutdownListener::onShutdown()
 	 */
-	public function onShutdown() {
+	public function shutdown() {
 		foreach ($this->shutdownClosures as $shutdownClosure) {
 			$shutdownClosure();
 		}
