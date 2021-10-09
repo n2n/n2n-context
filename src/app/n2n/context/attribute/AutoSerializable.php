@@ -23,6 +23,6 @@
 namespace n2n\context\attribute;
 
 #[\Attribute]
-class SessionScoped {
+class AutoSerializable {
 
 }

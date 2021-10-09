@@ -20,11 +20,9 @@
 * Thomas Günther.......: Developer, Hangar
 */
 
-namespace n2n\web\http\attribute;
+namespace n2n\context\attribute;
 
-use Attribute;
-
-#[Attribute]
+#[\Attribute]
 class ApplicationScoped {
 
 }
