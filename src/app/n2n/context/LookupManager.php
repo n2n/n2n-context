@@ -25,16 +25,14 @@ use n2n\util\UnserializationFailedException;
 use n2n\reflection\ReflectionUtils;
 use n2n\reflection\ReflectionContext;
 use n2n\util\cache\CacheStore;
-use n2n\web\http\HttpContextNotAvailableException;
 use n2n\util\StringUtils;
-use n2n\util\ex\IllegalStateException;
-use n2n\reflection\annotation\PropertyAnnotation;
+use n2n\reflection\attribute\PropertyAttribute;
 use n2n\reflection\magic\MagicUtils;
 use n2n\reflection\magic\MagicMethodInvoker;
-use n2n\web\http\Session;
-use n2n\context\annotation\AnnoApplicationScoped;
 use n2n\context\config\LookupSession;
 use n2n\util\magic\MagicContext;
+use n2n\context\attribute\ApplicationScoped;
+use n2n\context\attribute\SessionScoped;
 
 class LookupManager {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
@@ -43,7 +41,6 @@ class LookupManager {
 	const ON_UNSERIALIZE_METHOD = '_onUnserialize';
 	
 	private $session;
-	private $cacheStore;
 	private $shutdownClosures = array();
 	
 	private $requestScope = array();
@@ -67,29 +64,7 @@ class LookupManager {
 		$this->sessionScope = array();
 		$this->applicationScope = array();
 	}
-	/**
-	 * @return boolean 
-	 */
-	public function hasCacheStore() {
-		return $this->cacheStore !== null;
-	}
-	/**
-	 * @throws IllegalStateException
-	 * @return CacheStore
-	 */
-	public function getCacheStore() {
-		if ($this->cacheStore === null) {
-			$this->cacheStore = $this->session->getAppCache()->lookupCacheStore(self::class);
-		}
-		
-		return $this->cacheStore;
-	}
-	/**
-	 * @param CacheStore $cacheStore
-	 */
-	public function setCacheStore(CacheStore $cacheStore) {
-		$this->cacheStore = $cacheStore;
-	}
+
 	/**
 	 * @param string $className
 	 * @throws LookupFailedException
@@ -112,18 +87,17 @@ class LookupManager {
 	 * @param \ReflectionClass $class
 	 * @throws LookupFailedException
 	 * @throws ModelErrorException
-	 * @return Lookupable
 	 */
 	public function lookupByClass(\ReflectionClass $class) {
 		if ($class->implementsInterface(RequestScoped::class)) {
 			return $this->checkoutRequestScoped($class);
 		}
 		
-		if ($class->implementsInterface(SessionScoped::class)) {
+		if ($class->implementsInterface(\n2n\context\SessionScoped::class)) {
 			return $this->checkoutSessionModel($class, $class->implementsInterface(AutoSerializable::class));
 		}
 		
-		if ($class->implementsInterface(ApplicationScoped::class)) {
+		if ($class->implementsInterface(\n2n\context\ApplicationScoped::class)) {
 			return $this->checkoutApplicationModel($class, $class->implementsInterface(AutoSerializable::class));
 		}
 		
@@ -134,12 +108,12 @@ class LookupManager {
 		throw new LookupFailedException('Class is not marked as lookupable: ' . $class->getName());
 	}
 	/**
-	 * @param PropertyAnnotation $annotation
+	 * @param PropertyAttribute $attribute
 	 * @return ModelErrorException
 	 */
-	private function createErrorException(PropertyAnnotation $annotation) {
-		return new ModelErrorException('Annotation disallowed for simple Lookupables',
-				$annotation->getFileName(), $annotation->getLine());
+	private function createErrorException(PropertyAttribute $attribute) {
+		return new ModelErrorException('Attribute disallowed for simple Lookupables',
+				$attribute->getFile(), $attribute->getLine());
 	}
 	/**
 	 * @param \ReflectionClass $class
@@ -147,12 +121,14 @@ class LookupManager {
 	 * @return Lookupable
 	 */
 	private function checkoutLookupable(\ReflectionClass $class) {
-		$annotationSet = ReflectionContext::getAnnotationSet($class);
-		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\context\annotation\AnnoSessionScoped') as $annotation) {
-			throw $this->createErrorException($annotation);
+		$attributeSet = ReflectionContext::getAttributeSet($class);
+
+		foreach ($attributeSet->getPropertyAttributesByName(SessionScoped::class) as $attribute) {
+			throw $this->createErrorException($attribute);
 		}
-		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\context\annotation\AnnoApplicationScoped') as $annotation) {
-			throw $this->createErrorException($annotation);
+
+		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class) as $attribute) {
+			throw $this->createErrorException($attribute);
 		}
 		
 		$obj = ReflectionUtils::createObject($class);
@@ -181,35 +157,28 @@ class LookupManager {
 	 * @throws LookupFailedException
 	 */
 	private function checkForSessionProperties(\ReflectionClass $class, $obj) {
-		$annotationSet = ReflectionContext::getAnnotationSet($class);
-		if (!$annotationSet->containsPropertyAnnotationName('n2n\context\annotation\AnnoSessionScoped')) {
+		$attributeSet = ReflectionContext::getAttributeSet($class);
+		if (!$attributeSet->containsPropertyAttributeName(SessionScoped::class)) {
 			return;
 		}
-		
-		$session = null;
-		try {
-			$session = $this->session->getHttpContext()->getSession();
-		} catch (HttpContextNotAvailableException $e) {
-			throw new LookupFailedException('Could not check out session properties for: ' 
-					. $class->getName(), 0, $e);
-		}
-		
-		foreach ($annotationSet->getPropertyAnnotationsByName('n2n\context\annotation\AnnoSessionScoped') as $sessionScopedAnno) {
-			$property = $sessionScopedAnno->getAnnotatedProperty();
+
+		foreach ($attributeSet->getPropertyAttributesByName(SessionScoped::class) as $sessionScopedAttr) {
+			$property = $sessionScopedAttr->getProperty();
 			$propertyName = $property->getName();
 			
 			$property->setAccessible(true);
 			
 			$key = self::SESSION_KEY_PREFIX 
 					. $class->getName() . self::SESSION_CLASS_PROPERTY_KEY_SEPARATOR . $propertyName;
-			if ($session->has(LookupManager::class, $key)) {
+			if ($this->session->has(LookupManager::class, $key)) {
 				try {
-					$property->setValue($obj, StringUtils::unserialize($session->get(LookupManager::class, $key)));
-				} catch (UnserializationFailedException $e) { 
-					$session->remove(LookupManager::class, $key);	
+					$property->setValue($obj, StringUtils::unserialize($this->session->get(LookupManager::class, $key)));
+				} catch (UnserializationFailedException $e) {
+					$this->session->remove(LookupManager::class, $key);
 				}
 			}
-		
+
+			$session = $this->session;
 			$this->shutdownClosures[] = function () use ($key, $session, $property, $obj) {
 				$session->set(LookupManager::class, $key, serialize($property->getValue($obj)));
 				$property->setValue($obj, null);
@@ -225,16 +194,9 @@ class LookupManager {
 		if (isset($this->sessionScope[$class->getName()])) {
 			return $this->sessionScope[$class->getName()];
 		}
-		
-		$session = null;
-		try {
-			$session = $this->session->getHttpContext()->getSession();
-		} catch (HttpContextNotAvailableException $e) {
-			throw new LookupFailedException('Could not check out session model: ' . $class->getName(), 0, $e);
-		}
 
 		$key = self::SESSION_KEY_PREFIX . $class->getName();
-		$obj = $this->readSessionModel($session, $key, $class, $autoSerializable);
+		$obj = $this->readSessionModel($key, $class, $autoSerializable);
 		
 		if ($obj === null) {
 			$obj = ReflectionUtils::createObject($class);
@@ -242,17 +204,17 @@ class LookupManager {
 			MagicUtils::init($obj, $this->magicContext);
 		}
 
-		$this->shutdownClosures[] = function () use ($key, $session, $class, $obj, $autoSerializable) {
-			$this->writeSessionModel($session, $key, $obj, $class, $autoSerializable);
+		$this->shutdownClosures[] = function () use ($key, $class, $obj, $autoSerializable) {
+			$this->writeSessionModel($key, $obj, $class, $autoSerializable);
 		};
 		
 		return $this->sessionScope[$class->getName()] = $obj;
 	}
 	
-	private function readSessionModel(Session $session, $key, \ReflectionClass $class, $autoSerializable) {
-		if (!$session->has(LookupManager::class, $key)) return null;
+	private function readSessionModel($key, \ReflectionClass $class, $autoSerializable) {
+		if (!$this->session->has(LookupManager::class, $key)) return null;
 		
-		$serData = $session->get(LookupManager::class, $key);
+		$serData = $this->session->get(LookupManager::class, $key);
 		
 		if ($autoSerializable) {
 			try {
@@ -262,8 +224,8 @@ class LookupManager {
 					return $obj;
 				}
 			} catch (UnserializationFailedException $e) {}
-			
-			$session->remove(LookupManager::class, $key);
+
+			$this->session->remove(LookupManager::class, $key);
 			return null;
 		} 
 		
@@ -273,22 +235,22 @@ class LookupManager {
 		try {
 			$this->callOnUnserialize($class, $obj, SerDataReader::createFromSerializedStr($serData));
 		} catch (UnserializationFailedException $e) {
-			$session->remove(LookupManager::class, $key);
+			$this->session->remove(LookupManager::class, $key);
 			throw new LookupFailedException('Falied to unserialize session model: ' . $class->getName(), 0, $e);
 		}
 		
 		return $obj;
 	}
 
-	private function writeSessionModel(Session $session, $key, $obj, \ReflectionClass $class, $autoSerializable) {
+	private function writeSessionModel($key, $obj, \ReflectionClass $class, $autoSerializable) {
 		if ($autoSerializable) {
-			$session->set(LookupManager::class, $key, serialize($obj));
+			$this->session->set(LookupManager::class, $key, serialize($obj));
 			return;
 		}
 
 		$serDataWriter = new SerDataWriter();
 		$this->callOnSerialize($class, $obj, $serDataWriter);
-		$session->set(LookupManager::class, $key, $serDataWriter->serialize());
+		$this->session->set(LookupManager::class, $key, $serDataWriter->serialize());
 	}
 	/**
 	 * @param \ReflectionClass $class
@@ -296,31 +258,25 @@ class LookupManager {
 	 * @throws LookupFailedException
 	 */
 	private function checkForApplicationProperties(\ReflectionClass $class, $obj) {
-		$annotationSet = ReflectionContext::getAnnotationSet($class);
-		if (!$annotationSet->containsPropertyAnnotationName(AnnoApplicationScoped::class))  {
+		$attributeSet = ReflectionContext::getAttributeSet($class);
+		if (!$attributeSet->containsPropertyAttributeName(ApplicationScoped::class))  {
 			return;
 		}
-	
-		try {
-			$this->getCacheStore();
-		} catch (IllegalStateException $e) {
-			throw new LookupFailedException('Could not check out application scoped properties for: ' . $class->getName(), 0, $e);
-		}
-	
+
 		$className = $class->getName();
-		foreach ($annotationSet->getPropertyAnnotationsByName(AnnoApplicationScoped::class) as $applicationScopedAnno) {
-			$property = $applicationScopedAnno->getAnnotatedProperty();
+		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class) as $applicationScopedAttr) {
+			$property = $applicationScopedAttr->getProperty();
 			$characteristics = array('prop' => $property->getName());
 				
 			$property->setAccessible(true);
 				
 			$propValueSer = null;
-			if (null !== ($cacheItem = $this->cacheStore->get($className, $characteristics))) {
+			if (null !== ($cacheItem = $this->applicationCacheStore->get($className, $characteristics))) {
 				$propValueSer = $cacheItem->getData();
 				try {
 					$property->setValue($obj, StringUtils::unserialize($propValueSer));	
 				} catch (UnserializationFailedException $e) {
-					$this->cacheStore->remove($className, $characteristics);
+					$this->applicationCacheStore->remove($className, $characteristics);
 				}
 			}
 
@@ -329,7 +285,7 @@ class LookupManager {
 				$property->setValue($obj, null);
 				
 				if ($newPropValueSer != $propValueSer) {
-					$this->cacheStore->store($className, $characteristics, $newPropValueSer);
+					$this->applicationCacheStore->store($className, $characteristics, $newPropValueSer);
 				}
 			};
 		}
@@ -340,12 +296,6 @@ class LookupManager {
 	 * @return ApplicationScoped
 	 */
 	private function checkoutApplicationModel(\ReflectionClass $class, $autoSerializable) {
-		try {
-			$this->getCacheStore();
-		} catch (IllegalStateException $e) {
-			throw new LookupFailedException('Could not check out application scoped object: ' . $class->getName(), 0, $e);
-		}
-		
 		$className = $class->getName();
 		if (isset($this->applicationScope[$className])) {
 			return $this->applicationScope[$className];
@@ -371,7 +321,7 @@ class LookupManager {
 	private function readApplicationModel(\ReflectionClass $class, $autoSerializable, &$serData) {
 		$className = $class->getName();
 		
-		$cacheItem = $this->cacheStore->get($className, array());
+		$cacheItem = $this->applicationCacheStore->get($className, array());
 		if (null === $cacheItem) return null;
 		
 		$serData = $cacheItem->getData();
@@ -386,7 +336,7 @@ class LookupManager {
 				}
 			} catch (UnserializationFailedException $e) {}
 			
-			$this->cacheStore->remove($className, array());
+			$this->applicationCacheStore->remove($className, array());
 			return null;
 		}	
 	
@@ -396,7 +346,7 @@ class LookupManager {
 		try {
 			$this->callOnUnserialize($class, $obj, SerDataReader::createFromSerializedStr($serData));
 		} catch (UnserializationFailedException $e) {
-			$this->cacheStore->remove($className, array());
+			$this->applicationCacheStore->remove($className, array());
 			throw new LookupFailedException('Falied to unserialize application model: ' . $class->getName(), 0, $e);
 		}
 	
@@ -416,7 +366,7 @@ class LookupManager {
 		}
 		
 		if ($serData != $oldSerData) {
-			$this->cacheStore->store($className, array(), $serData);
+			$this->applicationCacheStore->store($className, array(), $serData);
 		}
 	}
 	

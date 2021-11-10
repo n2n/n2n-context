@@ -21,10 +21,23 @@
  */
 namespace n2n\context\annotation;
 
+use n2n\context\attribute\ApplicationScoped;
 use n2n\reflection\annotation\PropertyAnnotation;
 use n2n\reflection\annotation\PropertyAnnotationTrait;
 use n2n\reflection\annotation\AnnotationTrait;
+use n2n\reflection\attribute\legacy\LegacyAnnotation;
 
-class AnnoApplicationScoped implements PropertyAnnotation {
+/**
+ * @deprecated use { @link ApplicationScoped } now
+ */
+class AnnoApplicationScoped implements PropertyAnnotation, LegacyAnnotation {
 	use PropertyAnnotationTrait, AnnotationTrait;
+
+	public function getAttributeName(): string {
+		return ApplicationScoped::class;
+	}
+
+	public function toAttributeInstance() {
+		return new ApplicationScoped();
+	}
 }

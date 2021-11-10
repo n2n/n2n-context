@@ -21,10 +21,23 @@
  */
 namespace n2n\context\annotation;
 
+use n2n\context\attribute\SessionScoped;
 use n2n\reflection\annotation\PropertyAnnotation;
 use n2n\reflection\annotation\PropertyAnnotationTrait;
 use n2n\reflection\annotation\AnnotationTrait;
+use n2n\reflection\attribute\legacy\LegacyAnnotation;
 
-class AnnoSessionScoped implements PropertyAnnotation {
+/**
+ * @deprecated use { @link SessionScoped } now
+ */
+class AnnoSessionScoped implements PropertyAnnotation, LegacyAnnotation {
 	use PropertyAnnotationTrait, AnnotationTrait;
+
+	public function getAttributeName(): string {
+		return SessionScoped::class;
+	}
+
+	public function toAttributeInstance() {
+		return new SessionScoped();
+	}
 }
