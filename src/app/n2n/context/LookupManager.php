@@ -181,7 +181,6 @@ class LookupManager {
 			$session = $this->session;
 			$this->shutdownClosures[] = function () use ($key, $session, $property, $obj) {
 				$session->set(LookupManager::class, $key, serialize($property->getValue($obj)));
-				$property->setValue($obj, null);
 			};
 		}
 	}
@@ -281,8 +280,6 @@ class LookupManager {
 
 			$this->shutdownClosures[] = function () use ($className, $characteristics, $propValueSer, $property, $obj) {
 				$newPropValueSer = serialize($property->getValue($obj));
-				$property->setValue($obj, null);
-				
 				if ($newPropValueSer != $propValueSer) {
 					$this->applicationCacheStore->store($className, $characteristics, $newPropValueSer);
 				}
