@@ -26,4 +26,12 @@ class LegacyApplicationScopedMock implements ApplicationScoped {
 	public function setApplicationScopedStr($applicationScopedStr): void {
 		$this->applicationScopedStr = $applicationScopedStr;
 	}
+
+	private function _onSerialize() {
+		$this->applicationScopedStr = 'test';
+	}
+
+	private function _onUnserialize() {
+		$this->applicationScopedStr = 'test';
+	}
 }

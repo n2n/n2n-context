@@ -1,10 +1,10 @@
 <?php
 namespace n2n\context\mock;
 
+use n2n\context\AutoSerializable;
 use n2n\context\SessionScoped;
 
-class SessionScopedMock implements SessionScoped {
-	#[\n2n\context\attribute\SessionScoped]
+class InterfaceSessionScopedMock implements SessionScoped, AutoSerializable {
 	private string $sessionScopedStr;
 
 	/**

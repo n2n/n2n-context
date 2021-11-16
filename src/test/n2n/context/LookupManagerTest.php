@@ -1,13 +1,15 @@
 <?php
 namespace n2n\context;
 
-use n2n\context\mock\ApplicationScopedMock;
+use n2n\context\mock\AttributeApplicationScopedMock;
+use n2n\context\mock\AttributeSessionScopedMock;
+use n2n\context\mock\InterfaceApplicationScopedMock;
 use n2n\context\mock\InvalidLegacyLookupableMock;
 use n2n\context\mock\InvalidLookupableMock;
 use n2n\context\mock\LegacyApplicationScopedMock;
 use n2n\context\mock\LegacySessionScopedMock;
 use n2n\context\mock\LookupableMock;
-use n2n\context\mock\SessionScopedMock;
+use n2n\context\mock\InterfaceSessionScopedMock;
 use PHPUnit\Framework\TestCase;
 use n2n\context\config\SimpleLookupSession;
 use n2n\util\magic\MagicContext;
@@ -15,14 +17,18 @@ use n2n\util\cache\impl\FileCacheStore;
 
 class LookupManagerTest extends TestCase {
     private $lookupManager;
-    
+
+	private $session;
+	private $cacheStore;
+	private $magicContext;
+
     protected function setUp(): void {
 //     	$this->magicMethodInvoker = new SimpleMagicContext();
-    	
-    	$magicContext = $this->createStub(MagicContext::class);
-    	
-    	$this->lookupManager = new LookupManager(new SimpleLookupSession(), 
-    			new FileCacheStore(__DIR__ . DIRECTORY_SEPARATOR . 'tmp'), $magicContext);
+    	$this->session = new SimpleLookupSession();
+		$this->cacheStore = new FileCacheStore(__DIR__ . DIRECTORY_SEPARATOR . 'tmp', '0777', '0777');
+		$this->magicContext = $this->createStub(MagicContext::class);
+
+    	$this->lookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 	}
 	
     function testLookupLookupableInterface() {
@@ -31,22 +37,24 @@ class LookupManagerTest extends TestCase {
     }
 
 	function testLookupSessionScopedInterface() {
-		$annoLookupableMock = $this->lookupManager->lookup(SessionScopedMock::class);
-		$this->assertTrue($annoLookupableMock instanceof SessionScopedMock);
+		$annoLookupableMock = $this->lookupManager->lookup(InterfaceSessionScopedMock::class);
+		$this->assertTrue($annoLookupableMock instanceof InterfaceSessionScopedMock);
 	}
 
 	function testLookupApplicationScopedInterface() {
-		$annoLookupableMock = $this->lookupManager->lookup(ApplicationScopedMock::class);
-		$this->assertTrue($annoLookupableMock instanceof ApplicationScopedMock);
+		$annoLookupableMock = $this->lookupManager->lookup(InterfaceApplicationScopedMock::class);
+		$this->assertTrue($annoLookupableMock instanceof InterfaceApplicationScopedMock);
 	}
 
 	function testLookupApplicationScopedAttribute() {
 		$applicationScopedStr = 'test';
 
-		$attrLookupableMock = $this->lookupManager->lookup(ApplicationScopedMock::class);
+		$attrLookupableMock = $this->lookupManager->lookup(InterfaceApplicationScopedMock::class);
 		$attrLookupableMock->setApplicationScopedStr($applicationScopedStr);
+		$this->lookupManager->shutdown();
 
-		$attrLookupableMock = $this->lookupManager->lookup(ApplicationScopedMock::class);
+		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
+		$attrLookupableMock = $anotherLookupManager->lookup(InterfaceApplicationScopedMock::class);
 		$this->assertEquals($applicationScopedStr, $attrLookupableMock->getApplicationScopedStr());
 	}
 
@@ -55,18 +63,22 @@ class LookupManagerTest extends TestCase {
 
 		$annoLookupableMock = $this->lookupManager->lookup(LegacyApplicationScopedMock::class);
 		$annoLookupableMock->setApplicationScopedStr($applicationScopedStr);
+		$this->lookupManager->shutdown();
 
-		$annoLookupableMock = $this->lookupManager->lookup(LegacyApplicationScopedMock::class);
-		$this->assertEquals($applicationScopedStr, $annoLookupableMock->getApplicationScopedStr());
+		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
+		$applicationScopedMock = $anotherLookupManager->lookup(LegacyApplicationScopedMock::class);
+		$this->assertEquals($applicationScopedStr, $applicationScopedMock->getApplicationScopedStr());
 	}
 
 	function testLookupSessionScopedAttribute() {
 		$sessionScopedStr = 'test';
 
-		$sessionScopedMock = $this->lookupManager->lookup(SessionScopedMock::class);
+		$sessionScopedMock = $this->lookupManager->lookup(InterfaceSessionScopedMock::class);
 		$sessionScopedMock->setSessionScopedStr($sessionScopedStr);
+		$this->lookupManager->shutdown();
 
-		$sessionScopedMock = $this->lookupManager->lookup(SessionScopedMock::class);
+		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
+		$sessionScopedMock = $anotherLookupManager->lookup(InterfaceSessionScopedMock::class);
 		$this->assertEquals($sessionScopedStr, $sessionScopedMock->getSessionScopedStr());
 	}
 
@@ -75,9 +87,21 @@ class LookupManagerTest extends TestCase {
 
 		$sessionScopedMock = $this->lookupManager->lookup(LegacySessionScopedMock::class);
 		$sessionScopedMock->setSessionScopedStr($sessionScopedStr);
+		$this->lookupManager->shutdown();
 
-		$sessionScopedMock = $this->lookupManager->lookup(LegacySessionScopedMock::class);
+		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
+		$sessionScopedMock = $anotherLookupManager->lookup(LegacySessionScopedMock::class);
 		$this->assertEquals($sessionScopedStr, $sessionScopedMock->getSessionScopedStr());
+	}
+
+	function testAttributeSessionScoped() {
+		$sessionScopedMock = $this->lookupManager->lookup(AttributeSessionScopedMock::class);
+		$this->assertNotNull($sessionScopedMock);
+	}
+
+	function testAttributeApplicationScoped() {
+		$sessionScopedMock = $this->lookupManager->lookup(AttributeApplicationScopedMock::class);
+		$this->assertNotNull($sessionScopedMock);
 	}
 
 	function testLookupableError() {

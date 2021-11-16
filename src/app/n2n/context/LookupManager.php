@@ -58,7 +58,7 @@ class LookupManager {
 	    $this->applicationCacheStore = $applicationCacheStore;
 	    $this->magicContext = $magicContext;
 	}
-	
+
 	public function clear() {
 		$this->requestScope = array();
 		$this->sessionScope = array();
@@ -80,7 +80,7 @@ class LookupManager {
 		} else {
 			$class = ReflectionUtils::createReflectionClass($className);
 		}
-		
+
 		return $this->lookupByClass($class);
 	}
 	/**
@@ -92,12 +92,14 @@ class LookupManager {
 		if ($class->implementsInterface(RequestScoped::class)) {
 			return $this->checkoutRequestScoped($class);
 		}
-		
-		if ($class->implementsInterface(\n2n\context\SessionScoped::class)) {
+
+		$hasSessionAttribute = !empty($class->getAttributes(SessionScoped::class));
+		if ($class->implementsInterface(\n2n\context\SessionScoped::class) || $hasSessionAttribute) {
 			return $this->checkoutSessionModel($class, $class->implementsInterface(AutoSerializable::class));
 		}
-		
-		if ($class->implementsInterface(\n2n\context\ApplicationScoped::class)) {
+
+		$hasApplicationAttribute = !empty($class->getAttributes(ApplicationScoped::class));
+		if ($class->implementsInterface(\n2n\context\ApplicationScoped::class) || $hasApplicationAttribute) {
 			return $this->checkoutApplicationModel($class, $class->implementsInterface(AutoSerializable::class));
 		}
 		
@@ -197,7 +199,6 @@ class LookupManager {
 
 		$key = self::SESSION_KEY_PREFIX . $class->getName();
 		$obj = $this->readSessionModel($key, $class, $autoSerializable);
-		
 		if ($obj === null) {
 			$obj = ReflectionUtils::createObject($class);
 			$this->checkForApplicationProperties($class, $obj);
@@ -207,7 +208,6 @@ class LookupManager {
 		$this->shutdownClosures[] = function () use ($key, $class, $obj, $autoSerializable) {
 			$this->writeSessionModel($key, $obj, $class, $autoSerializable);
 		};
-		
 		return $this->sessionScope[$class->getName()] = $obj;
 	}
 	
@@ -215,7 +215,7 @@ class LookupManager {
 		if (!$this->session->has(LookupManager::class, $key)) return null;
 		
 		$serData = $this->session->get(LookupManager::class, $key);
-		
+
 		if ($autoSerializable) {
 			try {
 				$obj = StringUtils::unserialize($serData);
@@ -227,11 +227,10 @@ class LookupManager {
 
 			$this->session->remove(LookupManager::class, $key);
 			return null;
-		} 
-		
+		}
+
 		$obj = ReflectionUtils::createObject($class);
 		$this->checkForApplicationProperties($class, $obj);
-		
 		try {
 			$this->callOnUnserialize($class, $obj, SerDataReader::createFromSerializedStr($serData));
 		} catch (UnserializationFailedException $e) {
@@ -249,7 +248,9 @@ class LookupManager {
 		}
 
 		$serDataWriter = new SerDataWriter();
+		$serDataWriter->set($key, $obj);
 		$this->callOnSerialize($class, $obj, $serDataWriter);
+
 		$this->session->set(LookupManager::class, $key, $serDataWriter->serialize());
 	}
 	/**
@@ -300,7 +301,7 @@ class LookupManager {
 		if (isset($this->applicationScope[$className])) {
 			return $this->applicationScope[$className];
 		}
-		
+
 		$serData = null;
 		$obj = $this->readApplicationModel($class, $autoSerializable, $serData);
 		
@@ -371,13 +372,13 @@ class LookupManager {
 	}
 	
 	private function callOnUnserialize(\ReflectionClass $class, $obj, SerDataReader $serDataReader) {
-		$magicMethodInvoker = new MagicMethodInvoker($this->session);
+		$magicMethodInvoker = new MagicMethodInvoker($this->magicContext);
 		$magicMethodInvoker->setClassParamObject(get_class($serDataReader), $serDataReader);
 		$this->callMagcMethods($class, self::ON_UNSERIALIZE_METHOD, $obj, $magicMethodInvoker);
 	}
 	
 	private function callOnSerialize(\ReflectionClass $class, $obj, SerDataWriter $serDataWriter) {
-		$magicMethodInvoker = new MagicMethodInvoker($this->session);
+		$magicMethodInvoker = new MagicMethodInvoker($this->magicContext);
 		$magicMethodInvoker->setClassParamObject(get_class($serDataWriter), $serDataWriter);
 		$this->callMagcMethods($class, self::ON_SERIALIZE_METHOD, $obj, $magicMethodInvoker);
 	}

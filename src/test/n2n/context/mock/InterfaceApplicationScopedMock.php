@@ -2,9 +2,9 @@
 namespace n2n\context\mock;
 
 use n2n\context\ApplicationScoped;
+use n2n\context\AutoSerializable;
 
-class ApplicationScopedMock implements ApplicationScoped {
-	#[\n2n\context\attribute\ApplicationScoped]
+class InterfaceApplicationScopedMock implements ApplicationScoped, AutoSerializable {
 	private string $applicationScopedStr;
 
 	/**

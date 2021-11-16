@@ -3,6 +3,8 @@
 namespace n2n\context\mock;
 
 use n2n\context\annotation\AnnoSessionScoped;
+use n2n\context\SerDataReader;
+use n2n\context\SerDataWriter;
 use n2n\context\SessionScoped;
 use n2n\reflection\annotation\AnnoInit;
 
@@ -25,5 +27,13 @@ class LegacySessionScopedMock implements SessionScoped {
 	 */
 	public function setSessionScopedStr(string $sessionScopedStr): void {
 		$this->sessionScopedStr = $sessionScopedStr;
+	}
+
+	private function _onSerialize(SerDataWriter $dataWriter) {
+		$dataWriter->set('sessionScopedStr', $this->sessionScopedStr);
+	}
+
+	private function _onUnserialize(SerDataReader $dataReader) {
+		$this->sessionScopedStr = $dataReader->getString('sessionScopedStr');
 	}
 }
