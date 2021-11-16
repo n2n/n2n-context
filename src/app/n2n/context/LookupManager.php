@@ -53,10 +53,10 @@ class LookupManager {
 	 * @param CacheStore $applicationCacheStore
 	 */
 	public function __construct(LookupSession $lookupSession, CacheStore $applicationCacheStore,
-	       MagicContext $magicContext) {
-	    $this->session = $lookupSession;
-	    $this->applicationCacheStore = $applicationCacheStore;
-	    $this->magicContext = $magicContext;
+			MagicContext $magicContext) {
+		$this->session = $lookupSession;
+		$this->applicationCacheStore = $applicationCacheStore;
+		$this->magicContext = $magicContext;
 	}
 
 	public function clear() {
@@ -89,7 +89,7 @@ class LookupManager {
 	 * @throws ModelErrorException
 	 */
 	public function lookupByClass(\ReflectionClass $class) {
-		if ($class->implementsInterface(RequestScoped::class)) {
+		if ($this->isRequestScoped($class)) {
 			return $this->checkoutRequestScoped($class);
 		}
 
@@ -101,7 +101,7 @@ class LookupManager {
 			return $this->checkoutApplicationModel($class, $this->isAutoSerializable($class));
 		}
 		
-		if ($class->implementsInterface(Lookupable::class)) {
+		if ($this->isLookupable($class)) {
 			return $this->checkoutLookupable($class);
 		}
 		
@@ -415,5 +415,15 @@ class LookupManager {
 	private function isAutoSerializable(\ReflectionClass $class) {
 		return !empty($class->getAttributes(\n2n\context\attribute\AutoSerializable::class))
 			|| $class->implementsInterface(AutoSerializable::class);
+	}
+
+	private function isLookupable($class) {
+		return !empty($class->getAttributes(\n2n\context\attribute\Lookupable::class))
+			|| $class->implementsInterface(Lookupable::class);
+	}
+
+	private function isRequestScoped($class) {
+		return !empty($class->getAttributes(\n2n\context\attribute\RequestScoped::class))
+			|| $class->implementsInterface(RequestScoped::class);
 	}
 }

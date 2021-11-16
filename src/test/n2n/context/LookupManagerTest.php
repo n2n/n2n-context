@@ -2,8 +2,11 @@
 namespace n2n\context;
 
 use n2n\context\mock\AttributeApplicationScopedMock;
+use n2n\context\mock\AttributeLookupableMock;
+use n2n\context\mock\AttributeRequestScopedMock;
 use n2n\context\mock\AttributeSessionScopedMock;
 use n2n\context\mock\InterfaceApplicationScopedMock;
+use n2n\context\mock\InterfaceRequestScopedMock;
 use n2n\context\mock\InvalidLegacyLookupableMock;
 use n2n\context\mock\InvalidLookupableMock;
 use n2n\context\mock\LegacyApplicationScopedMock;
@@ -30,10 +33,25 @@ class LookupManagerTest extends TestCase {
     	$this->lookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 	}
 
+	function testLookupLookupableAttribute() {
+		$attrLookupableMock = $this->lookupManager->lookup(AttributeLookupableMock::class);
+		$this->assertTrue($attrLookupableMock instanceof AttributeLookupableMock);
+	}
+
     function testLookupLookupableInterface() {
     	$annoLookupableMock = $this->lookupManager->lookup(LookupableMock::class);
 		$this->assertTrue($annoLookupableMock instanceof LookupableMock);
     }
+
+	function testLookupRequestScopedAttribute() {
+		$attrRequestScopedMock = $this->lookupManager->lookup(AttributeRequestScopedMock::class);
+		$this->assertTrue($attrRequestScopedMock instanceof AttributeRequestScopedMock);
+	}
+
+	function testLookupRequestScopedInterface() {
+		$interfaceRequestScopedMock = $this->lookupManager->lookup(InterfaceRequestScopedMock::class);
+		$this->assertTrue($interfaceRequestScopedMock instanceof InterfaceRequestScopedMock);
+	}
 
 	function testLookupApplicationScopedAttribute() {
 		$applicationScopedStr = 'test';
