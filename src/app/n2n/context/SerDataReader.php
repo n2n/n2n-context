@@ -39,7 +39,7 @@ class SerDataReader {
 	private function ensureExists($name) {
 		if ($this->contains($name)) return;
 		
-		throw new UnserializationFailedException('Serialized data contains not attribute \'' . $name . '\'');
+		throw new UnserializationFailedException('Serialized data doesn\'t contain attribute \'' . $name . '\'');
 	}
 	
 	public function get($name, $defaultValue = null) {
