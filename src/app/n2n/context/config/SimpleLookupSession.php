@@ -22,7 +22,7 @@
 namespace n2n\context\config;
 
 class SimpleLookupSession implements LookupSession {
-    private $data = [];
+    private array $data = [];
     
     private function &nsData(string $namespace) {
         if (!isset($this->data[$namespace])) {
@@ -33,17 +33,17 @@ class SimpleLookupSession implements LookupSession {
     }
     
     public function has(string $namespace, string $key): bool {
-        return array_key_exists($namespace, $this->nsData($namespace));        
+        return array_key_exists($key, $this->nsData($namespace));
     }
     
 
     public function set(string $namespace, string $key, $value) {
-        return $this->nsData($key)[$key] = $value;
+        return $this->nsData($namespace)[$key] = $value;
     }
     
 
     public function get(string $namespace, string $key) {
-        return $this->nsData($key)[$key] ?? null;
+        return $this->nsData($namespace)[$key] ?? null;
     }
     
     /**
@@ -52,6 +52,6 @@ class SimpleLookupSession implements LookupSession {
      * @param string $key
      */
     public function remove(string $namespace, string $key) {
-    	unset($this->nsData($key)[$key]);    
+    	unset($this->nsData($namespace)[$key]);
     }
 }
