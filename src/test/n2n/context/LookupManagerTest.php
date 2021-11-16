@@ -23,7 +23,6 @@ class LookupManagerTest extends TestCase {
 	private $magicContext;
 
     protected function setUp(): void {
-//     	$this->magicMethodInvoker = new SimpleMagicContext();
     	$this->session = new SimpleLookupSession();
 		$this->cacheStore = new FileCacheStore(__DIR__ . DIRECTORY_SEPARATOR . 'tmp', '0777', '0777');
 		$this->magicContext = $this->createStub(MagicContext::class);
@@ -48,14 +47,17 @@ class LookupManagerTest extends TestCase {
 
 	function testLookupApplicationScopedAttribute() {
 		$applicationScopedStr = 'test';
+		$sessionScopedStr = 'session test';
 
-		$attrLookupableMock = $this->lookupManager->lookup(InterfaceApplicationScopedMock::class);
+		$attrLookupableMock = $this->lookupManager->lookup(AttributeApplicationScopedMock::class);
 		$attrLookupableMock->setApplicationScopedStr($applicationScopedStr);
+		$attrLookupableMock->setSessionScopedStr($sessionScopedStr);
 		$this->lookupManager->shutdown();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
-		$attrLookupableMock = $anotherLookupManager->lookup(InterfaceApplicationScopedMock::class);
+		$attrLookupableMock = $anotherLookupManager->lookup(AttributeApplicationScopedMock::class);
 		$this->assertEquals($applicationScopedStr, $attrLookupableMock->getApplicationScopedStr());
+		$this->assertEquals($sessionScopedStr, $attrLookupableMock->getSessionScopedStr());
 	}
 
 	function testLookupApplicationScopedLegacyAnno() {

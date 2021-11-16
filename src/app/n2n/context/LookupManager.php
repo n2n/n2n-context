@@ -93,14 +93,12 @@ class LookupManager {
 			return $this->checkoutRequestScoped($class);
 		}
 
-		$hasSessionAttribute = !empty($class->getAttributes(SessionScoped::class));
-		if ($class->implementsInterface(\n2n\context\SessionScoped::class) || $hasSessionAttribute) {
-			return $this->checkoutSessionModel($class, $class->implementsInterface(AutoSerializable::class));
+		if ($this->isSessionScoped($class)) {
+			return $this->checkoutSessionModel($class, $this->isAutoSerializable($class));
 		}
 
-		$hasApplicationAttribute = !empty($class->getAttributes(ApplicationScoped::class));
-		if ($class->implementsInterface(\n2n\context\ApplicationScoped::class) || $hasApplicationAttribute) {
-			return $this->checkoutApplicationModel($class, $class->implementsInterface(AutoSerializable::class));
+		if ($this->isApplicationScoped($class)) {
+			return $this->checkoutApplicationModel($class, $this->isAutoSerializable($class));
 		}
 		
 		if ($class->implementsInterface(Lookupable::class)) {
@@ -213,7 +211,7 @@ class LookupManager {
 	
 	private function readSessionModel($key, \ReflectionClass $class, $autoSerializable) {
 		if (!$this->session->has(LookupManager::class, $key)) return null;
-		
+
 		$serData = $this->session->get(LookupManager::class, $key);
 
 		if ($autoSerializable) {
@@ -405,5 +403,20 @@ class LookupManager {
 		foreach ($this->shutdownClosures as $shutdownClosure) {
 			$shutdownClosure();
 		}
+	}
+
+	private function isApplicationScoped(\ReflectionClass $class) {
+		return !empty($class->getAttributes(ApplicationScoped::class))
+				|| $class->implementsInterface(\n2n\context\ApplicationScoped::class);
+	}
+
+	private function isSessionScoped(\ReflectionClass $class) {
+		return !empty($class->getAttributes(SessionScoped::class))
+				|| $class->implementsInterface(\n2n\context\SessionScoped::class);
+	}
+
+	private function isAutoSerializable(\ReflectionClass $class) {
+		return !empty($class->getAttributes(\n2n\context\attribute\AutoSerializable::class))
+			|| $class->implementsInterface(AutoSerializable::class);
 	}
 }
