@@ -41,11 +41,11 @@ class LookupManager {
 	const ON_UNSERIALIZE_METHOD = '_onUnserialize';
 	
 	private $session;
-	private $shutdownClosures = array();
+	protected $shutdownClosures = array();
 	
-	private $requestScope = array();
-	private $sessionScope = array();
-	private $applicationScope = array();
+	protected $requestScope = array();
+	protected $sessionScope = array();
+	protected $applicationScope = array();
 	private $magicContext;
 
 	/**
@@ -57,6 +57,43 @@ class LookupManager {
 		$this->session = $lookupSession;
 		$this->applicationCacheStore = $applicationCacheStore;
 		$this->magicContext = $magicContext;
+	}
+
+	/**
+	 * @return LookupSession
+	 */
+	function getLookupSession() {
+		return $this->session;
+	}
+
+	/**
+	 * @return CacheStore
+	 */
+	function getApplicationCacheStore() {
+		return $this->applicationCacheStore;
+	}
+
+	/**
+	 * @return MagicContext
+	 */
+	function getMagicContext() {
+		return $this->magicContext;
+	}
+
+	/**
+	 * @return LookupManager
+	 */
+	function copy(bool $contentsIncluded = false) {
+		$lookupManager = new LookupManager($this->session, $this->applicationCacheStore, $this->magicContext);
+
+		if ($contentsIncluded) {
+			$lookupManager->requestScope = $this->requestScope;
+			$lookupManager->sessionScope = $this->sessionScope;
+			$lookupManager->applicationScope = $this->applicationScope;
+			$lookupManager->shutdownClosures = $this->shutdownClosures;
+		}
+
+		return $lookupManager;
 	}
 
 	public function clear() {
@@ -152,6 +189,7 @@ class LookupManager {
 		MagicUtils::init($obj, $this->magicContext);
 		return $obj;
 	}
+
 	/**
 	 * @param \ReflectionClass $class
 	 * @throws LookupFailedException
