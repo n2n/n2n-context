@@ -100,6 +100,7 @@ class LookupManager {
 		$this->requestScope = array();
 		$this->sessionScope = array();
 		$this->applicationScope = array();
+		$this->shutdownClosures = array();
 	}
 
 	/**
