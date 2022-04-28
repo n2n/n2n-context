@@ -448,8 +448,6 @@ class LookupManager {
 		foreach ($this->shutdownClosures as $shutdownClosure) {
 			$shutdownClosure();
 		}
-
-		$this->clear();
 	}
 
 	private function isApplicationScoped(\ReflectionClass $class) {
