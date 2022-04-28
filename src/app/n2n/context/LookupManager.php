@@ -100,6 +100,16 @@ class LookupManager {
 		$this->requestScope = array();
 		$this->sessionScope = array();
 		$this->applicationScope = array();
+		$this->shutdownClosures = array();
+	}
+
+	/**
+	 * @param string $className
+	 * @return bool
+	 */
+	function contains(string $className) {
+		return isset($this->requestScope[$className]) || isset($this->sessionScope[$className])
+				|| isset($this->applicationScope[$className]);
 	}
 
 	/**
@@ -438,6 +448,8 @@ class LookupManager {
 		foreach ($this->shutdownClosures as $shutdownClosure) {
 			$shutdownClosure();
 		}
+
+		$this->clear();
 	}
 
 	private function isApplicationScoped(\ReflectionClass $class) {
