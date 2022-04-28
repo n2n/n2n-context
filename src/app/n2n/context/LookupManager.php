@@ -105,6 +105,15 @@ class LookupManager {
 
 	/**
 	 * @param string $className
+	 * @return bool
+	 */
+	function contains(string $className) {
+		return isset($this->requestScope[$className]) || isset($this->sessionScope[$className])
+				|| isset($this->applicationScope[$className]);
+	}
+
+	/**
+	 * @param string $className
 	 * @throws LookupFailedException
 	 * @return Lookupable
 	 */
@@ -453,16 +462,16 @@ class LookupManager {
 
 	private function isAutoSerializable(\ReflectionClass $class) {
 		return !empty($class->getAttributes(\n2n\context\attribute\AutoSerializable::class))
-			|| $class->implementsInterface(AutoSerializable::class);
+				|| $class->implementsInterface(AutoSerializable::class);
 	}
 
 	private function isLookupable($class) {
 		return !empty($class->getAttributes(\n2n\context\attribute\Lookupable::class))
-			|| $class->implementsInterface(Lookupable::class);
+				|| $class->implementsInterface(Lookupable::class);
 	}
 
 	private function isRequestScoped($class) {
 		return !empty($class->getAttributes(\n2n\context\attribute\RequestScoped::class))
-			|| $class->implementsInterface(RequestScoped::class);
+				|| $class->implementsInterface(RequestScoped::class);
 	}
 }
