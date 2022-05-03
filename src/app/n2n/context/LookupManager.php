@@ -33,6 +33,7 @@ use n2n\context\config\LookupSession;
 use n2n\util\magic\MagicContext;
 use n2n\context\attribute\ApplicationScoped;
 use n2n\context\attribute\SessionScoped;
+use n2n\util\ex\IllegalStateException;
 
 class LookupManager {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
@@ -97,10 +98,19 @@ class LookupManager {
 	}
 
 	public function clear() {
-		$this->requestScope = array();
-		$this->sessionScope = array();
-		$this->applicationScope = array();
+		$this->terminateScope($this->requestScope);
+		$this->terminateScope($this->sessionScope);
+		$this->terminateScope($this->applicationScope);
 		$this->shutdownClosures = array();
+
+		IllegalStateException::assertTrue(empty($this->requestScope) && empty($this->sessionScope)
+				&& empty($this->applicationScope));
+	}
+
+	private function terminateScope(&$objs) {
+		while (null !== ($obj = array_pop($objs))) {
+			MagicUtils::terminate($obj);
+		}
 	}
 
 	/**
