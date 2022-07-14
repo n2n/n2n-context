@@ -5,9 +5,13 @@ namespace n2n\context\mock;
 use n2n\context\attribute\ApplicationScoped;
 use n2n\context\attribute\AutoSerializable;
 use n2n\context\attribute\SessionScoped;
+use n2n\context\attribute\Inject;
 
 #[ApplicationScoped, AutoSerializable]
 class AttributeApplicationScopedMock {
+	#[Inject]
+	public LookupableMock $lookupable;
+
 	private string $applicationScopedStr;
 
 	#[SessionScoped]

@@ -21,6 +21,8 @@
  */
 namespace n2n\context;
 
-class LookupFailedException extends \RuntimeException {
+use Psr\Container\ContainerExceptionInterface;
+
+class LookupFailedException extends \RuntimeException implements ContainerExceptionInterface {
 	
 }
