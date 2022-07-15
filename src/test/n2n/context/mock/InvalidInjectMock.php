@@ -8,5 +8,5 @@ use n2n\context\attribute\Inject;
 #[Lookupable]
 class InvalidInjectMock {
 	#[Inject]
-	private $noType;
+	private string $noType;
 }

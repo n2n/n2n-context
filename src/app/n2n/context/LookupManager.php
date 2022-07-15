@@ -131,7 +131,8 @@ class LookupManager implements ContainerInterface {
 	 */
 	function has(string $id): bool {
 		try {
-			return null !== $this->get($id);
+			$class = $this->createReflectionClassById($id);
+			return $this->isExposed($class);
 		} catch (LookupableNotFoundException $e) {
 			return false;
 		}
@@ -152,16 +153,7 @@ class LookupManager implements ContainerInterface {
 	 * @throws ContainerExceptionInterface|NotFoundExceptionInterface|ModelErrorException
 	 */
 	function get(string $id) {
-		if (empty($id)) {
-			throw new LookupableNotFoundException('Name is empty.');
-		}
-
-		try {
-			$class = new \ReflectionClass($id);
-		} catch (\ReflectionException $e) {
-			throw new LookupableNotFoundException('Could not get: ' . $id , null, $e);
-		}
-
+		$class = $this->createReflectionClassById($id);
 		return $this->lookupByClass($class);
 	}
 
@@ -293,12 +285,19 @@ class LookupManager implements ContainerInterface {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
 
 		foreach ($attributeSet->getPropertyAttributesByName(Inject::class) as $injectPropertyAttribute) {
-			$targetProperty = $injectPropertyAttribute->getProperty();
-			$this->checkInjectPropertyHasType($targetProperty);
+			$this->checkInjectPropertyHasType($injectPropertyAttribute);
 //			$this->checkInfiniteInjection($injectPropertyAttribute);
 
+			$targetProperty = $injectPropertyAttribute->getProperty();
 			$targetProperty->setAccessible(true);
-			$targetInjectable = $this->get($targetProperty->getType()->getName());
+			try {
+				$targetInjectable = $this->get($targetProperty->getType()->getName());
+			} catch (NotFoundExceptionInterface|ContainerExceptionInterface|ModelErrorException $e) {
+				throw new ModelErrorException('Could not inject property: ' .
+						TypeUtils::prettyReflPropName($targetProperty), $injectPropertyAttribute->getFile(),
+						$injectPropertyAttribute->getLine(),
+						null, null, $e);
+			}
 
 			$targetProperty->setValue($obj, $targetInjectable);
 		}
@@ -602,13 +601,42 @@ class LookupManager implements ContainerInterface {
 	}
 
 	/**
-	 * @param \ReflectionProperty $property
+	 * @param PropertyAttribute $attribute
 	 * @return void
 	 * @throws ModelErrorException
 	 */
-	private function checkInjectPropertyHasType(\ReflectionProperty $property) {
-		if ($property->getType() === null) {
-			throw new ModelErrorException('#[Inject] properties must have a type.');
+	private function checkInjectPropertyHasType(PropertyAttribute $attribute) {
+		$type = $attribute->getProperty()->getType();
+		if ($type !== null && !$type->isBuiltin()) {
+			return;
 		}
+
+		throw new ModelErrorException('#[Inject] property must have a non primitive type.', $attribute->getFile(),
+				$attribute->getLine());
+	}
+
+	/**
+	 * @param string $id
+	 * @return \ReflectionClass
+	 * @throws LookupFailedException
+	 */
+	private function createReflectionClassById(string $id) {
+		if (empty($id)) {
+			throw new LookupableNotFoundException('Name is empty.');
+		}
+
+		try {
+			return new \ReflectionClass($id);
+		} catch (\ReflectionException $e) {
+			throw new LookupableNotFoundException('Could not find: ' . $id , null, $e);
+		}
+	}
+
+	private function isExposed(\ReflectionClass $reflectionClass) {
+		return $this->isRequestScoped($reflectionClass)
+				|| $this->isLookupable($reflectionClass)
+				|| $this->isSessionScoped($reflectionClass)
+				|| $this->isApplicationScoped($reflectionClass)
+				|| $this->isThreadScoped($reflectionClass);
 	}
 }

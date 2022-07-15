@@ -2,11 +2,11 @@
 
 namespace n2n\context\mock;
 
+use n2n\context\attribute\RequestScoped;
 use n2n\context\attribute\Inject;
-use n2n\context\attribute\ThreadScoped;
 
-#[ThreadScoped]
+#[RequestScoped]
 class InfiniteInjectionMock {
 	#[Inject]
-	protected InfiniteInjectionMock $infiniteInjectionMock;
+	public InfiniteInjectionMock $infiniteInjectionMock;
 }

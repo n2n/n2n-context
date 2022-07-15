@@ -24,6 +24,7 @@ use n2n\context\mock\SimpleClassMock;
 use n2n\context\mock\InjectMock;
 use n2n\context\mock\InvalidInjectMock;
 use n2n\context\mock\InfiniteInjectionMock;
+use n2n\context\mock\InvalidInjectTypeMock;
 
 class LookupManagerTest extends TestCase {
 	/**
@@ -180,6 +181,7 @@ class LookupManagerTest extends TestCase {
 		/**
 		 * @var InjectMock $injectMock
 		 */
+		$this->assertTrue($this->lookupManager->has(InjectMock::class));
 		$injectMock = $this->lookupManager->get(InjectMock::class);
 		$this->assertInstanceOf(AttributeLookupableMock::class, $injectMock->getAttributeLookupableMock());
 		$this->assertInstanceOf(AttributeRequestScopedMock::class, $injectMock->getAttributeLookupableMock()->requestScoped);
@@ -206,8 +208,14 @@ class LookupManagerTest extends TestCase {
 		$this->lookupManager->get(InvalidInjectMock::class);
 	}
 
-	function testInfiniteDependencyInjection() {
+	function testInfiniteInjectionWorks() {
+		$mock = $this->lookupManager->get(InfiniteInjectionMock::class);
+		$this->assertInstanceOf(InfiniteInjectionMock::class, $mock->infiniteInjectionMock);
+	}
+
+	function testCouldNotInjectPropertyException() {
 		$this->expectException(ModelErrorException::class);
-		$this->lookupManager->get(InfiniteInjectionMock::class);
+		$this->expectExceptionMessage('Could not inject property: n2n\context\mock\InvalidInjectTypeMock::$simpleClassMock');
+		$this->lookupManager->get(InvalidInjectTypeMock::class);
 	}
 }
