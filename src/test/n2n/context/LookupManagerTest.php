@@ -208,14 +208,20 @@ class LookupManagerTest extends TestCase {
 		$this->lookupManager->get(InvalidInjectMock::class);
 	}
 
+	/**
+	 * @throws ModelErrorException
+	 */
 	function testInfiniteInjectionWorks() {
 		$mock = $this->lookupManager->get(InfiniteInjectionMock::class);
 		$this->assertInstanceOf(InfiniteInjectionMock::class, $mock->infiniteInjectionMock);
 	}
 
+	/**
+	 * @throws ModelErrorException
+	 */
 	function testCouldNotInjectPropertyException() {
-		$this->expectException(ModelErrorException::class);
-		$this->expectExceptionMessage('Could not inject property: n2n\context\mock\InvalidInjectTypeMock::$simpleClassMock');
+		$this->expectException(LookupFailedException::class);
+		$this->expectExceptionMessage('Could not inject property value: n2n\context\mock\InvalidInjectTypeMock::$simpleClassMock');
 		$this->lookupManager->get(InvalidInjectTypeMock::class);
 	}
 }
