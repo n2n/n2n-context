@@ -47,31 +47,49 @@ class LookupManagerTest extends TestCase {
 	function testLookupLookupableAttribute() {
 		$attrLookupableMock = $this->lookupManager->lookup(AttributeLookupableMock::class);
 		$this->assertTrue($attrLookupableMock instanceof AttributeLookupableMock);
+
+		$this->assertTrue($attrLookupableMock
+				!== $this->lookupManager->lookup(AttributeLookupableMock::class));
 	}
 
     function testLookupLookupableInterface() {
     	$annoLookupableMock = $this->lookupManager->lookup(LookupableMock::class);
 		$this->assertTrue($annoLookupableMock instanceof LookupableMock);
+
+		$this->assertTrue($annoLookupableMock
+				!== $this->lookupManager->lookup(LookupableMock::class));
     }
 
 	function testLookupRequestScopedAttribute() {
 		$attrRequestScopedMock = $this->lookupManager->lookup(AttributeRequestScopedMock::class);
 		$this->assertTrue($attrRequestScopedMock instanceof AttributeRequestScopedMock);
+
+		$this->assertTrue($attrRequestScopedMock
+				=== $this->lookupManager->lookup(AttributeRequestScopedMock::class));
 	}
 
 	function testLookupThreadScopedAttribute() {
 		$attrThreadScopedMock = $this->lookupManager->lookup(AttributeThreadScopedMock::class);
 		$this->assertTrue($attrThreadScopedMock instanceof AttributeThreadScopedMock);
+
+		$this->assertTrue($attrThreadScopedMock
+				=== $this->lookupManager->lookup(AttributeThreadScopedMock::class));
 	}
 
 	function testLookupRequestScopedInterface() {
 		$interfaceRequestScopedMock = $this->lookupManager->lookup(InterfaceRequestScopedMock::class);
 		$this->assertTrue($interfaceRequestScopedMock instanceof InterfaceRequestScopedMock);
+
+		$this->assertTrue($interfaceRequestScopedMock
+				=== $this->lookupManager->lookup(InterfaceRequestScopedMock::class));
 	}
 
 	function testLookupThreadScopedInterface() {
 		$interfaceThreadScopedMock = $this->lookupManager->lookup(InterfaceThreadScopedMock::class);
 		$this->assertTrue($interfaceThreadScopedMock instanceof InterfaceThreadScopedMock);
+
+		$this->assertTrue($interfaceThreadScopedMock
+				=== $this->lookupManager->lookup(InterfaceThreadScopedMock::class));
 	}
 
 	function testLookupApplicationScopedAttribute() {
