@@ -194,7 +194,7 @@ class LookupManager implements ContainerInterface {
 	/**
 	 * @param \ReflectionClass $class
 	 * @throws ModelErrorException
-	 * @return Lookupable
+	 * @return object
 	 */
 	private function checkoutLookupable(\ReflectionClass $class) {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
@@ -207,10 +207,12 @@ class LookupManager implements ContainerInterface {
 			throw $this->createErrorException($attribute);
 		}
 
-		/**
-		 * @var Lookupable $obj
-		 */
-		$obj = ReflectionUtils::createObject($class);
+		try {
+			$obj = ReflectionUtils::createObject($class);
+		} catch (ObjectCreationFailedException $e) {
+			throw new LookupFailedException('Could not create object: ' . $class->getName(), 0, $e);
+		}
+
 		$this->checkForInjectProperties($class, $obj);
 		MagicUtils::init($obj, $this->magicContext);
 		return $obj;
