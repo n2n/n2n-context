@@ -296,7 +296,8 @@ class LookupManager implements ContainerInterface {
 			$targetProperty = $injectPropertyAttribute->getProperty();
 			$targetProperty->setAccessible(true);
 			try {
-				$targetInjectable = $this->magicContext->lookup($targetProperty->getType()->getName());
+				$type = $targetProperty->getType();
+				$targetInjectable = $this->magicContext->lookup($type->getName(), !$type->allowsNull());
 			} catch (MagicObjectUnavailableException $e) {
 				throw new LookupFailedException('Could not inject property value: '
 						. TypeUtils::prettyReflPropName($targetProperty), 0, $e);

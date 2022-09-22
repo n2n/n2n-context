@@ -9,4 +9,5 @@ use n2n\context\attribute\ThreadScoped;
 class InvalidInjectTypeMock {
 	#[Inject]
 	protected SimpleClassMock $simpleClassMock;
+
 }

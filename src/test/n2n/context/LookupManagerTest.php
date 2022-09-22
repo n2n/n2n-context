@@ -25,6 +25,7 @@ use n2n\context\mock\InjectMock;
 use n2n\context\mock\InvalidInjectMock;
 use n2n\context\mock\InfiniteInjectionMock;
 use n2n\context\mock\InvalidInjectTypeMock;
+use n2n\util\magic\MagicObjectUnavailableException;
 
 class LookupManagerTest extends TestCase {
 	/**
@@ -39,9 +40,19 @@ class LookupManagerTest extends TestCase {
     protected function setUp(): void {
     	$this->session = new SimpleLookupSession();
 		$this->cacheStore = new FileCacheStore(__DIR__ . DIRECTORY_SEPARATOR . 'tmp', '0777', '0777');
+
 		$this->magicContext = $this->createStub(MagicContext::class);
+		$this->magicContext->method('lookup')->willReturnCallback(function ($id) {
+			try {
+				return $this->lookupManager->lookup($id);
+			} catch (LookupFailedException $e) {
+				throw new MagicObjectUnavailableException('mock', 0, $e);
+			}
+		});
 
     	$this->lookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
+
+
 	}
 
 	function testLookupLookupableAttribute() {
