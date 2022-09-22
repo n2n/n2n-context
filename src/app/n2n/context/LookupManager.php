@@ -41,6 +41,7 @@ use n2n\context\attribute\Inject;
 use n2n\reflection\ObjectCreationFailedException;
 use n2n\util\type\ArgUtils;
 use n2n\util\type\TypeUtils;
+use n2n\util\magic\MagicObjectUnavailableException;
 
 class LookupManager implements ContainerInterface {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
@@ -295,8 +296,8 @@ class LookupManager implements ContainerInterface {
 			$targetProperty = $injectPropertyAttribute->getProperty();
 			$targetProperty->setAccessible(true);
 			try {
-				$targetInjectable = $this->get($targetProperty->getType()->getName());
-			} catch (LookupFailedException $e) {
+				$targetInjectable = $this->magicContext->lookup($targetProperty->getType()->getName());
+			} catch (MagicObjectUnavailableException $e) {
 				throw new LookupFailedException('Could not inject property value: '
 						. TypeUtils::prettyReflPropName($targetProperty), 0, $e);
 			}
