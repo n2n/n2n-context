@@ -19,7 +19,6 @@ use n2n\util\magic\MagicContext;
 use n2n\util\cache\impl\FileCacheStore;
 use n2n\context\mock\AttributeThreadScopedMock;
 use n2n\context\mock\InterfaceThreadScopedMock;
-use Psr\Container\NotFoundExceptionInterface;
 use n2n\context\mock\SimpleClassMock;
 use n2n\context\mock\InjectMock;
 use n2n\context\mock\InvalidInjectMock;
@@ -183,27 +182,27 @@ class LookupManagerTest extends TestCase {
 
 	function testLookupableError() {
 		$this->expectException(ModelErrorException::class);
-		$this->lookupManager->get(InvalidLookupableMock::class);
+		$this->lookupManager->lookup(InvalidLookupableMock::class);
 	}
 
 	function testLegacyLookupableError() {
 		$this->expectException(ModelErrorException::class);
-		$this->lookupManager->get(InvalidLegacyLookupableMock::class);
+		$this->lookupManager->lookup(InvalidLegacyLookupableMock::class);
 	}
 
-	function testPsr11CompatibilityForNonExistingClassLookupable() {
-		$this->expectException(NotFoundExceptionInterface::class);
-		$this->lookupManager->get('asdf');
+	function testExceptionForNonExistingClassLookupable() {
+		$this->expectException(LookupableNotFoundException::class);
+		$this->lookupManager->lookup('asdf');
 	}
 
-	function testPsr11CompatibilityForNonLookupable() {
-		$this->expectException(NotFoundExceptionInterface::class);
-		$this->lookupManager->get(SimpleClassMock::class);
+	function testExceptionForNonLookupable() {
+		$this->expectException(LookupableNotFoundException::class);
+		$this->lookupManager->lookup(SimpleClassMock::class);
 	}
 
-	function testPsr11CompatibilityImplements() {
+	function testImplements() {
 		$this->assertNotFalse($this->lookupManager->has(LookupableMock::class));
-		$this->assertNotNull($this->lookupManager->get(LookupableMock::class));
+		$this->assertNotNull($this->lookupManager->lookup(LookupableMock::class));
 	}
 
 	function testInjectMock() {
@@ -211,7 +210,7 @@ class LookupManagerTest extends TestCase {
 		 * @var InjectMock $injectMock
 		 */
 		$this->assertTrue($this->lookupManager->has(InjectMock::class));
-		$injectMock = $this->lookupManager->get(InjectMock::class);
+		$injectMock = $this->lookupManager->lookup(InjectMock::class);
 		$this->assertInstanceOf(AttributeLookupableMock::class, $injectMock->getAttributeLookupableMock());
 		$this->assertInstanceOf(AttributeRequestScopedMock::class, $injectMock->getAttributeLookupableMock()->requestScoped);
 
@@ -234,14 +233,14 @@ class LookupManagerTest extends TestCase {
 
 	function testInjectWithoutType() {
 		$this->expectException(ModelErrorException::class);
-		$this->lookupManager->get(InvalidInjectMock::class);
+		$this->lookupManager->lookup(InvalidInjectMock::class);
 	}
 
 	/**
 	 * @throws ModelErrorException
 	 */
 	function testInfiniteInjectionWorks() {
-		$mock = $this->lookupManager->get(InfiniteInjectionMock::class);
+		$mock = $this->lookupManager->lookup(InfiniteInjectionMock::class);
 		$this->assertInstanceOf(InfiniteInjectionMock::class, $mock->infiniteInjectionMock);
 	}
 
@@ -251,6 +250,6 @@ class LookupManagerTest extends TestCase {
 	function testCouldNotInjectPropertyException() {
 		$this->expectException(LookupFailedException::class);
 		$this->expectExceptionMessage('Could not inject property value: n2n\context\mock\InvalidInjectTypeMock::$simpleClassMock');
-		$this->lookupManager->get(InvalidInjectTypeMock::class);
+		$this->lookupManager->lookup(InvalidInjectTypeMock::class);
 	}
 }
