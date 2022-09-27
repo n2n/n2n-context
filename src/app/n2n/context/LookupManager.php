@@ -34,16 +34,12 @@ use n2n\util\magic\MagicContext;
 use n2n\context\attribute\ApplicationScoped;
 use n2n\context\attribute\SessionScoped;
 use n2n\util\ex\IllegalStateException;
-use Psr\Container\ContainerInterface;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use n2n\context\attribute\Inject;
 use n2n\reflection\ObjectCreationFailedException;
-use n2n\util\type\ArgUtils;
 use n2n\util\type\TypeUtils;
 use n2n\util\magic\MagicObjectUnavailableException;
 
-class LookupManager implements ContainerInterface {
+class LookupManager {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
 	const SESSION_CLASS_PROPERTY_KEY_SEPARATOR = '.';
 	const ON_SERIALIZE_METHOD = '_onSerialize';
@@ -145,16 +141,7 @@ class LookupManager implements ContainerInterface {
 	 * @return Lookupable
 	 */
 	public function lookup(string $className) {
-		return $this->get($className);
-	}
-
-	/**
-	 * @param string $id
-	 * @return Lookupable
-	 * @throws LookupFailedException|LookupableNotFoundException|ModelErrorException
-	 */
-	function get(string $id) {
-		$class = $this->createReflectionClassById($id);
+		$class = $this->createReflectionClassById($className);
 		return $this->lookupByClass($class);
 	}
 
@@ -162,6 +149,7 @@ class LookupManager implements ContainerInterface {
 	 * @param \ReflectionClass $class
 	 * @return mixed
 	 * @throws ModelErrorException
+	 * @throws LookupFailedException
 	 */
 	public function lookupByClass(\ReflectionClass $class) {
 		if ($this->isRequestScoped($class) || $this->isThreadScoped($class)) {
@@ -336,8 +324,8 @@ class LookupManager implements ContainerInterface {
 	 * @param \ReflectionClass $class
 	 * @param bool $autoSerializable
 	 * @return false|mixed|object|null
-	 * @throws ContainerExceptionInterface
-	 * @throws NotFoundExceptionInterface|ModelErrorException
+	 * @throws LookupFailedException
+	 * @throws ModelErrorException
 	 */
 	private function checkoutSessionModel(\ReflectionClass $class, bool $autoSerializable) {
 		if (isset($this->sessionScope[$class->getName()])) {
