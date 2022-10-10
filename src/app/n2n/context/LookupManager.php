@@ -127,6 +127,10 @@ class LookupManager {
 	 * @return bool
 	 */
 	function has(string $id): bool {
+		if ($this->contains($id)) {
+			return true;
+		}
+
 		try {
 			$class = $this->createReflectionClassById($id);
 			return $this->isExposed($class);
@@ -141,6 +145,18 @@ class LookupManager {
 	 * @return Lookupable
 	 */
 	public function lookup(string $className) {
+		if (isset($this->requestScope[$className])) {
+			return $this->requestScope[$className];
+		}
+
+		if (isset($this->sessionScope[$className])) {
+			return $this->sessionScope[$className];
+		}
+
+		if (isset($this->applicationScope[$className])) {
+			return $this->applicationScope[$className];
+		}
+
 		$class = $this->createReflectionClassById($className);
 		return $this->lookupByClass($class);
 	}
@@ -214,9 +230,10 @@ class LookupManager {
 	 * @throws LookupFailedException
 	 */
 	private function checkoutRequestScoped(\ReflectionClass $class) {
-		if (isset($this->requestScope[$class->getName()])) {
-			return $this->requestScope[$class->getName()];
-		}
+		IllegalStateException::assertTrue(!isset($this->requestScope[$class->getName()]));
+//		if (isset($this->requestScope[$class->getName()])) {
+//			return $this->requestScope[$class->getName()];
+//		}
 
 		try {
 			$obj = ReflectionUtils::createObject($class);
@@ -328,9 +345,10 @@ class LookupManager {
 	 * @throws ModelErrorException
 	 */
 	private function checkoutSessionModel(\ReflectionClass $class, bool $autoSerializable) {
-		if (isset($this->sessionScope[$class->getName()])) {
-			return $this->sessionScope[$class->getName()];
-		}
+		IllegalStateException::assertTrue(!isset($this->sessionScope[$class->getName()]));
+//		if (isset($this->sessionScope[$class->getName()])) {
+//			return $this->sessionScope[$class->getName()];
+//		}
 
 		try {
 			$key = self::SESSION_KEY_PREFIX . $class->getName();
@@ -449,9 +467,11 @@ class LookupManager {
 	 */
 	private function checkoutApplicationModel(\ReflectionClass $class, $autoSerializable) {
 		$className = $class->getName();
-		if (isset($this->applicationScope[$className])) {
-			return $this->applicationScope[$className];
-		}
+		IllegalStateException::assertTrue(!isset($this->applicationScope[$className]));
+
+//		if (isset($this->applicationScope[$className])) {
+//			return $this->applicationScope[$className];
+//		}
 
 		try {
 			$serData = null;
