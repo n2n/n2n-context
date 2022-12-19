@@ -654,7 +654,7 @@ class LookupManager {
 		try {
 			return new \ReflectionClass($id);
 		} catch (\ReflectionException $e) {
-			throw new LookupableNotFoundException('Could not find: ' . $id , null, $e);
+			throw new LookupableNotFoundException('Could not find: ' . $id , 0, $e);
 		}
 	}
 
