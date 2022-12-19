@@ -24,9 +24,8 @@
 		"vendor-dir" : "src/vendor"
 	},
 	"require" : {
-		"php" : ">=8.0",
-		"n2n/n2n-reflection" : "^7.3",
-		"n2n/n2n-util" : "^7.3"
+		"n2n/n2n-reflection" : "~7.3.3",
+		"n2n/n2n-util" : "~7.3"
 	},
     "provide": {
       "psr/container-implementation": "1.0.0"
