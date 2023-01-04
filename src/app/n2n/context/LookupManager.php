@@ -142,7 +142,7 @@ class LookupManager {
 	/**
 	 * @param string $className
 	 * @throws LookupFailedException
-	 * @return Lookupable
+	 * @return mixed
 	 */
 	public function lookup(string $className) {
 		if (isset($this->requestScope[$className])) {
