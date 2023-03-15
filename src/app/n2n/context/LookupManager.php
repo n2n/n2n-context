@@ -63,21 +63,21 @@ class LookupManager {
 	/**
 	 * @return LookupSession
 	 */
-	function getLookupSession() {
+	function getLookupSession(): LookupSession {
 		return $this->lookupSession;
 	}
 
 	/**
 	 * @return CacheStore
 	 */
-	function getApplicationCacheStore() {
+	function getApplicationCacheStore(): CacheStore {
 		return $this->applicationCacheStore;
 	}
 
 	/**
 	 * @return MagicContext
 	 */
-	function getMagicContext() {
+	function getMagicContext(): MagicContext {
 		return $this->magicContext;
 	}
 
@@ -302,7 +302,8 @@ class LookupManager {
 			$targetProperty->setAccessible(true);
 			try {
 				$type = $targetProperty->getType();
-				$targetInjectable = $this->magicContext->lookup($type->getName(), !$type->allowsNull());
+				$targetInjectable = $this->magicContext->lookup($type->getName(), !$type->allowsNull(),
+						$class->getNamespaceName());
 			} catch (MagicObjectUnavailableException $e) {
 				throw new LookupFailedException('Could not inject property value: '
 						. TypeUtils::prettyReflPropName($targetProperty), 0, $e);
@@ -540,7 +541,7 @@ class LookupManager {
 		return $obj;
 	}
 
-	private function writeApplicationModel($obj, \ReflectionClass $class, $autoSerializable, $oldSerData) {
+	private function writeApplicationModel($obj, \ReflectionClass $class, $autoSerializable, $oldSerData): void {
 		$className = $class->getName();
 
 		$serData = null;
@@ -557,13 +558,13 @@ class LookupManager {
 		}
 	}
 
-	private function callOnUnserialize(\ReflectionClass $class, $obj, SerDataReader $serDataReader) {
+	private function callOnUnserialize(\ReflectionClass $class, $obj, SerDataReader $serDataReader): void {
 		$magicMethodInvoker = new MagicMethodInvoker($this->magicContext);
 		$magicMethodInvoker->setClassParamObject(get_class($serDataReader), $serDataReader);
 		$this->callMagicMethods($class, self::ON_UNSERIALIZE_METHOD, $obj, $magicMethodInvoker);
 	}
 
-	private function callOnSerialize(\ReflectionClass $class, $obj, SerDataWriter $serDataWriter) {
+	private function callOnSerialize(\ReflectionClass $class, $obj, SerDataWriter $serDataWriter): void {
 		$magicMethodInvoker = new MagicMethodInvoker($this->magicContext);
 		$magicMethodInvoker->setClassParamObject(get_class($serDataWriter), $serDataWriter);
 		$this->callMagicMethods($class, self::ON_SERIALIZE_METHOD, $obj, $magicMethodInvoker);
