@@ -44,4 +44,15 @@ class AttributeSessionScopedMock {
 	public function setApplicationScopedStr(string $applicationScopedStr): void {
 		$this->applicationScopedStr = $applicationScopedStr;
 	}
+
+	public int $initTimes = 0;
+	public int $terminateTimes = 0;
+
+	private function _init() {
+		$this->initTimes++;
+	}
+
+	private function _terminate() {
+		$this->terminateTimes++;
+	}
 }

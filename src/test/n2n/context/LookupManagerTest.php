@@ -25,6 +25,7 @@ use n2n\context\mock\InvalidInjectMock;
 use n2n\context\mock\InfiniteInjectionMock;
 use n2n\context\mock\InvalidInjectTypeMock;
 use n2n\util\magic\MagicObjectUnavailableException;
+use n2n\util\cache\impl\EphemeralCacheStore;
 
 class LookupManagerTest extends TestCase {
 	/**
@@ -38,7 +39,7 @@ class LookupManagerTest extends TestCase {
 
     protected function setUp(): void {
     	$this->session = new SimpleLookupSession();
-		$this->cacheStore = new FileCacheStore(__DIR__ . DIRECTORY_SEPARATOR . 'tmp', '0777', '0777');
+		$this->cacheStore = new EphemeralCacheStore();
 
 		$this->magicContext = $this->createStub(MagicContext::class);
 		$this->magicContext->method('lookup')->willReturnCallback(function ($id) {
@@ -109,7 +110,7 @@ class LookupManagerTest extends TestCase {
 		$attrLookupableMock = $this->lookupManager->lookup(AttributeApplicationScopedMock::class);
 		$attrLookupableMock->setApplicationScopedStr($applicationScopedStr);
 		$attrLookupableMock->setSessionScopedStr($sessionScopedStr);
-		$this->lookupManager->shutdown();
+		$this->lookupManager->flush();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 		$attrLookupableMock = $anotherLookupManager->lookup(AttributeApplicationScopedMock::class);
@@ -122,7 +123,7 @@ class LookupManagerTest extends TestCase {
 
 		$annoLookupableMock = $this->lookupManager->lookup(LegacyApplicationScopedMock::class);
 		$annoLookupableMock->setApplicationScopedStr($applicationScopedStr);
-		$this->lookupManager->shutdown();
+		$this->lookupManager->flush();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 		$applicationScopedMock = $anotherLookupManager->lookup(LegacyApplicationScopedMock::class);
@@ -136,7 +137,7 @@ class LookupManagerTest extends TestCase {
 		$sessionScopedMock = $this->lookupManager->lookup(AttributeSessionScopedMock::class);
 		$sessionScopedMock->setSessionScopedStr($sessionScopedStr);
 		$sessionScopedMock->setApplicationScopedStr($appScopedStr);
-		$this->lookupManager->shutdown();
+		$this->lookupManager->flush();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 		$sessionScopedMock = $anotherLookupManager->lookup(AttributeSessionScopedMock::class);
@@ -149,7 +150,7 @@ class LookupManagerTest extends TestCase {
 
 		$sessionScopedMock = $this->lookupManager->lookup(LegacySessionScopedMock::class);
 		$sessionScopedMock->setSessionScopedStr($sessionScopedStr);
-		$this->lookupManager->shutdown();
+		$this->lookupManager->flush();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 		$sessionScopedMock = $anotherLookupManager->lookup(LegacySessionScopedMock::class);
@@ -161,7 +162,7 @@ class LookupManagerTest extends TestCase {
 
 		$sessionScopedMock = $this->lookupManager->lookup(InterfaceSessionScopedMock::class);
 		$sessionScopedMock->setSessionScopedStr($sessionScopedStr);
-		$this->lookupManager->shutdown();
+		$this->lookupManager->flush();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 		$sessionScopedMock = $anotherLookupManager->lookup(InterfaceSessionScopedMock::class);
@@ -173,7 +174,7 @@ class LookupManagerTest extends TestCase {
 
 		$applicationScopedMock = $this->lookupManager->lookup(InterfaceApplicationScopedMock::class);
 		$applicationScopedMock->setApplicationScopedStr($applicationScoped);
-		$this->lookupManager->shutdown();
+		$this->lookupManager->flush();
 
 		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
 		$applicationScopedMock = $anotherLookupManager->lookup(InterfaceApplicationScopedMock::class);
@@ -251,5 +252,47 @@ class LookupManagerTest extends TestCase {
 		$this->expectException(LookupFailedException::class);
 		$this->expectExceptionMessage('Could not inject property value: n2n\context\mock\InvalidInjectTypeMock::$simpleClassMock');
 		$this->lookupManager->lookup(InvalidInjectTypeMock::class);
+	}
+
+	function testCallbacks() {
+		$lookupableMock = $this->lookupManager->lookup(AttributeLookupableMock::class);
+		$threadScopedMock = $this->lookupManager->lookup(AttributeThreadScopedMock::class);
+		$requestScopedMock = $this->lookupManager->lookup(AttributeRequestScopedMock::class);
+		$sessionScopedMock = $this->lookupManager->lookup(AttributeSessionScopedMock::class);
+		$applicationScopedMock = $this->lookupManager->lookup(AttributeApplicationScopedMock::class);
+
+		$this->assertEquals(1, $lookupableMock->initTimes);
+		$this->assertEquals(1, $threadScopedMock->initTimes);
+		$this->assertEquals(1, $requestScopedMock->initTimes);
+		$this->assertEquals(1, $sessionScopedMock->initTimes);
+		$this->assertEquals(1, $applicationScopedMock->initTimes);
+
+		$this->assertEquals(0, $lookupableMock->terminateTimes);
+		$this->assertEquals(0, $threadScopedMock->terminateTimes);
+		$this->assertEquals(0, $requestScopedMock->terminateTimes);
+		$this->assertEquals(0, $sessionScopedMock->terminateTimes);
+		$this->assertEquals(0, $applicationScopedMock->terminateTimes);
+
+		$this->lookupManager->flush();
+
+		$this->assertEquals(1, $lookupableMock->initTimes);
+		$this->assertEquals(1, $threadScopedMock->initTimes);
+		$this->assertEquals(1, $requestScopedMock->initTimes);
+		$this->assertEquals(1, $sessionScopedMock->initTimes);
+		$this->assertEquals(1, $applicationScopedMock->initTimes);
+
+		$this->assertEquals(0, $lookupableMock->terminateTimes);
+		$this->assertEquals(0, $threadScopedMock->terminateTimes);
+		$this->assertEquals(0, $requestScopedMock->terminateTimes);
+		$this->assertEquals(0, $sessionScopedMock->terminateTimes);
+		$this->assertEquals(0, $applicationScopedMock->terminateTimes);
+
+		$this->lookupManager->clear();
+
+		$this->assertEquals(1, $lookupableMock->terminateTimes);
+		$this->assertEquals(1, $threadScopedMock->terminateTimes);
+		$this->assertEquals(1, $requestScopedMock->terminateTimes);
+		$this->assertEquals(1, $sessionScopedMock->terminateTimes);
+		$this->assertEquals(1, $applicationScopedMock->terminateTimes);
 	}
 }

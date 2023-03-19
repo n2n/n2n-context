@@ -47,6 +47,7 @@ class LookupManager {
 
 	protected array $shutdownClosures = array();
 
+	protected array $terminatableLookupScope = array();
 	protected array $requestScope = array();
 	protected array $sessionScope = array();
 	protected array $applicationScope = array();
@@ -98,6 +99,7 @@ class LookupManager {
 	}
 
 	public function clear() {
+		$this->terminateScope($this->terminatableLookupScope);
 		$this->terminateScope($this->requestScope);
 		$this->terminateScope($this->sessionScope);
 		$this->terminateScope($this->applicationScope);
@@ -117,7 +119,7 @@ class LookupManager {
 	 * @param string $className
 	 * @return bool
 	 */
-	function contains(string $className) {
+	function contains(string $className): bool {
 		return isset($this->requestScope[$className]) || isset($this->sessionScope[$className])
 				|| isset($this->applicationScope[$className]);
 	}
@@ -140,9 +142,10 @@ class LookupManager {
 	}
 
 	/**
-	 * @param string $className
+	 * @template T
+	 * @param class-string<T> $className
 	 * @throws LookupFailedException
-	 * @return mixed
+	 * @return T|null
 	 */
 	public function lookup(string $className) {
 		if (isset($this->requestScope[$className])) {
@@ -167,7 +170,7 @@ class LookupManager {
 	 * @throws ModelErrorException
 	 * @throws LookupFailedException
 	 */
-	public function lookupByClass(\ReflectionClass $class) {
+	public function lookupByClass(\ReflectionClass $class): mixed {
 		if ($this->isRequestScoped($class) || $this->isThreadScoped($class)) {
 			return $this->checkoutRequestScoped($class);
 		}
@@ -220,6 +223,11 @@ class LookupManager {
 
 		$this->checkForInjectProperties($class, $obj);
 		MagicUtils::init($obj, $this->magicContext);
+
+		if (MagicUtils::isTerminatable($obj)) {
+			$this->terminatableLookupScope[] = $obj;
+		}
+
 		return $obj;
 	}
 
@@ -451,6 +459,10 @@ class LookupManager {
 			}
 
 			$this->shutdownClosures[] = function () use ($className, $characteristics, $propValueSer, $property, $obj) {
+				if (!$property->isInitialized($obj)) {
+					return;
+				}
+
 				$newPropValueSer = serialize($property->getValue($obj));
 				if ($newPropValueSer != $propValueSer) {
 					$this->applicationCacheStore->store($className, $characteristics, $newPropValueSer);
@@ -588,10 +600,8 @@ class LookupManager {
 			$magicMethodInvoker->invoke($obj, $method);
 		}
 	}
-	/* (non-PHPdoc)
-	 * @see \n2n\core\ShutdownListener::onShutdown()
-	 */
-	public function shutdown() {
+
+	public function flush(): void {
 		foreach ($this->shutdownClosures as $shutdownClosure) {
 			$shutdownClosure();
 		}

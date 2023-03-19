@@ -13,4 +13,15 @@ class AttributeRequestScopedMock {
 	public function getApplicationScoped(): AttributeApplicationScopedMock {
 		return $this->applicationScoped;
 	}
+
+	public int $initTimes = 0;
+	public int $terminateTimes = 0;
+
+	private function _init() {
+		$this->initTimes++;
+	}
+
+	private function _terminate() {
+		$this->terminateTimes++;
+	}
 }
