@@ -141,13 +141,7 @@ class LookupManager {
 		}
 	}
 
-	/**
-	 * @template T
-	 * @param class-string<T> $className
-	 * @throws LookupFailedException
-	 * @return T|null
-	 */
-	public function lookup(string $className) {
+	private function getByClassName(string $className): mixed {
 		if (isset($this->requestScope[$className])) {
 			return $this->requestScope[$className];
 		}
@@ -158,6 +152,20 @@ class LookupManager {
 
 		if (isset($this->applicationScope[$className])) {
 			return $this->applicationScope[$className];
+		}
+
+		return null;
+	}
+
+	/**
+	 * @template T
+	 * @param class-string<T> $className
+	 * @throws LookupFailedException
+	 * @return T|null
+	 */
+	public function lookup(string $className) {
+		if (null !== ($obj = $this->getByClassName($className))) {
+			return $obj;
 		}
 
 		$class = $this->createReflectionClassById($className);
@@ -171,6 +179,10 @@ class LookupManager {
 	 * @throws LookupFailedException
 	 */
 	public function lookupByClass(\ReflectionClass $class): mixed {
+		if (null !== ($obj = $this->getByClassName($class->getName()))) {
+			return $obj;
+		}
+
 		if ($this->isRequestScoped($class) || $this->isThreadScoped($class)) {
 			return $this->checkoutRequestScoped($class);
 		}

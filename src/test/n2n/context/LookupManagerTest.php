@@ -79,12 +79,32 @@ class LookupManagerTest extends TestCase {
 				=== $this->lookupManager->lookup(AttributeRequestScopedMock::class));
 	}
 
+	function testLookupByClassRequestScopedAttribute() {
+		$class = new \ReflectionClass(AttributeRequestScopedMock::class);
+
+		$attrRequestScopedMock = $this->lookupManager->lookupByClass($class);
+		$this->assertTrue($attrRequestScopedMock instanceof AttributeRequestScopedMock);
+
+		$this->assertTrue($attrRequestScopedMock
+				=== $this->lookupManager->lookupByClass($class));
+	}
+
 	function testLookupThreadScopedAttribute() {
 		$attrThreadScopedMock = $this->lookupManager->lookup(AttributeThreadScopedMock::class);
 		$this->assertTrue($attrThreadScopedMock instanceof AttributeThreadScopedMock);
 
 		$this->assertTrue($attrThreadScopedMock
 				=== $this->lookupManager->lookup(AttributeThreadScopedMock::class));
+	}
+
+	function testLookupByClassThreadScopedAttribute() {
+		$class = new \ReflectionClass(AttributeThreadScopedMock::class);
+
+		$attrRequestScopedMock = $this->lookupManager->lookupByClass($class);
+		$this->assertTrue($attrRequestScopedMock instanceof AttributeThreadScopedMock);
+
+		$this->assertTrue($attrRequestScopedMock
+				=== $this->lookupManager->lookupByClass($class));
 	}
 
 	function testLookupRequestScopedInterface() {
@@ -95,12 +115,32 @@ class LookupManagerTest extends TestCase {
 				=== $this->lookupManager->lookup(InterfaceRequestScopedMock::class));
 	}
 
-	function testLookupThreadScopedInterface() {
-		$interfaceThreadScopedMock = $this->lookupManager->lookup(InterfaceThreadScopedMock::class);
-		$this->assertTrue($interfaceThreadScopedMock instanceof InterfaceThreadScopedMock);
+	function testLookupByClassRequestSScopedInterface() {
+		$class = new \ReflectionClass(InterfaceRequestScopedMock::class);
 
-		$this->assertTrue($interfaceThreadScopedMock
+		$obj = $this->lookupManager->lookupByClass($class);
+		$this->assertTrue($obj instanceof InterfaceRequestScopedMock);
+
+		$this->assertTrue($obj
+				=== $this->lookupManager->lookupByClass($class));
+	}
+
+	function testLookupThreadScopedInterface() {
+		$obj = $this->lookupManager->lookup(InterfaceThreadScopedMock::class);
+		$this->assertTrue($obj instanceof InterfaceThreadScopedMock);
+
+		$this->assertTrue($obj
 				=== $this->lookupManager->lookup(InterfaceThreadScopedMock::class));
+	}
+
+	function testLookupByClassThreadScopedInterface() {
+		$class = new \ReflectionClass(InterfaceThreadScopedMock::class);
+
+		$obj = $this->lookupManager->lookupByClass($class);
+		$this->assertTrue($obj instanceof InterfaceThreadScopedMock);
+
+		$this->assertTrue($obj
+				=== $this->lookupManager->lookupByClass($class));
 	}
 
 	function testLookupApplicationScopedAttribute() {
