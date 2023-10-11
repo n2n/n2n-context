@@ -23,6 +23,9 @@ namespace n2n\context;
 
 use n2n\util\ex\err\FancyErrorException;
 
+/**
+ * @deprecated
+ */
 class ModelErrorException extends FancyErrorException {
 	
 }

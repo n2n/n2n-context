@@ -209,6 +209,19 @@ class LookupManagerTest extends TestCase {
 		$this->assertEquals($sessionScopedStr, $sessionScopedMock->getSessionScopedStr());
 	}
 
+	function testLookupByClassSessionScopedInterface() {
+		$sessionScopedStr = 'test';
+		$class = new \ReflectionClass(InterfaceSessionScopedMock::class);
+
+		$sessionScopedMock = $this->lookupManager->lookupByClass($class);
+		$sessionScopedMock->setSessionScopedStr($sessionScopedStr);
+		$this->lookupManager->flush();
+
+		$anotherLookupManager = new LookupManager($this->session, $this->cacheStore, $this->magicContext);
+		$sessionScopedMock = $anotherLookupManager->lookupByClass($class);
+		$this->assertEquals($sessionScopedStr, $sessionScopedMock->getSessionScopedStr());
+	}
+
 	function testLookupApplicationScopedInterface() {
 		$applicationScoped = 'test';
 
@@ -222,12 +235,12 @@ class LookupManagerTest extends TestCase {
 	}
 
 	function testLookupableError() {
-		$this->expectException(ModelErrorException::class);
+		$this->expectException(ModelError::class);
 		$this->lookupManager->lookup(InvalidLookupableMock::class);
 	}
 
 	function testLegacyLookupableError() {
-		$this->expectException(ModelErrorException::class);
+		$this->expectException(ModelError::class);
 		$this->lookupManager->lookup(InvalidLegacyLookupableMock::class);
 	}
 
@@ -273,12 +286,12 @@ class LookupManagerTest extends TestCase {
 	}
 
 	function testInjectWithoutType() {
-		$this->expectException(ModelErrorException::class);
+		$this->expectException(ModelError::class);
 		$this->lookupManager->lookup(InvalidInjectMock::class);
 	}
 
 	/**
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 */
 	function testInfiniteInjectionWorks() {
 		$mock = $this->lookupManager->lookup(InfiniteInjectionMock::class);
@@ -286,7 +299,7 @@ class LookupManagerTest extends TestCase {
 	}
 
 	/**
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 */
 	function testCouldNotInjectPropertyException() {
 		$this->expectException(LookupFailedException::class);

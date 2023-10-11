@@ -175,7 +175,6 @@ class LookupManager {
 	/**
 	 * @param \ReflectionClass $class
 	 * @return mixed
-	 * @throws ModelErrorException
 	 * @throws LookupFailedException
 	 */
 	public function lookupByClass(\ReflectionClass $class): mixed {
@@ -205,15 +204,15 @@ class LookupManager {
 	}
 	/**
 	 * @param PropertyAttribute $attribute
-	 * @return ModelErrorException
+	 * @return ModelError
 	 */
 	private function createErrorException(PropertyAttribute $attribute) {
-		return new ModelErrorException('Attribute disallowed for simple Lookupables',
+		return new ModelError('Attribute disallowed for simple Lookupables',
 				$attribute->getFile(), $attribute->getLine());
 	}
 	/**
 	 * @param \ReflectionClass $class
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 * @return object
 	 */
 	private function checkoutLookupable(\ReflectionClass $class) {
@@ -246,7 +245,7 @@ class LookupManager {
 	/**
 	 * @param \ReflectionClass $class
 	 * @return object
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 * @throws LookupFailedException
 	 */
 	private function checkoutRequestScoped(\ReflectionClass $class) {
@@ -309,7 +308,6 @@ class LookupManager {
 	 * @param object $obj
 	 * @return void
 	 * @throws LookupFailedException
-	 * @throws ModelErrorException
 	 */
 	private function checkForInjectProperties(\ReflectionClass $class, object $obj) {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
@@ -337,14 +335,14 @@ class LookupManager {
 //	 * @param PropertyAttribute $injectPropertyAttribute
 //	 * @param $tree
 //	 * @return void
-//	 * @throws ModelErrorException
+//	 * @throws ModelError
 //	 */
 //	private function checkInfiniteInjection(PropertyAttribute $injectPropertyAttribute, $tree = []) {
 ////		if (N2N_STAGE !== 'test') return; @todo: N2N::isDevelopmentMode() not available
 //		$property = $injectPropertyAttribute->getProperty();
 //		$injectAbleDeclaredInClassName = $property->getDeclaringClass()->getName();
 //		if (in_array($injectAbleDeclaredInClassName, $tree)) {
-//			throw new ModelErrorException('Infinite Dependency Injection detected in: '
+//			throw new ModelError('Infinite Dependency Injection detected in: '
 //					. $injectAbleDeclaredInClassName . '::$' . $injectPropertyAttribute->getProperty()->getName(),
 //					$injectPropertyAttribute->getFile(), $injectPropertyAttribute->getLine());
 //		}
@@ -363,7 +361,6 @@ class LookupManager {
 	 * @param bool $autoSerializable
 	 * @return false|mixed|object|null
 	 * @throws LookupFailedException
-	 * @throws ModelErrorException
 	 */
 	private function checkoutSessionModel(\ReflectionClass $class, bool $autoSerializable) {
 		IllegalStateException::assertTrue(!isset($this->sessionScope[$class->getName()]));
@@ -488,7 +485,7 @@ class LookupManager {
 	 * @param $autoSerializable
 	 * @return object
 	 * @throws LookupFailedException
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 */
 	private function checkoutApplicationModel(\ReflectionClass $class, $autoSerializable) {
 		$className = $class->getName();
@@ -595,13 +592,13 @@ class LookupManager {
 	}
 
 	/**
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 */
 	private function callMagicMethods(\ReflectionClass $class, $methodName, $obj, MagicMethodInvoker $magicMethodInvoker) {
 		$methods = ReflectionUtils::extractMethodHierarchy($class, $methodName);
 
 		if (0 == count($methods)) {
-			throw new ModelErrorException('Magic method missing: ' . $class->getName() . '::'
+			throw new ModelError('Magic method missing: ' . $class->getName() . '::'
 					. $methodName . '()', $class->getFileName(), $class->getStartLine());
 		}
 
@@ -652,7 +649,7 @@ class LookupManager {
 	/**
 	 * @param PropertyAttribute $attribute
 	 * @return void
-	 * @throws ModelErrorException
+	 * @throws ModelError
 	 */
 	private function checkInjectPropertyHasType(PropertyAttribute $attribute) {
 		$type = $attribute->getProperty()->getType();
@@ -660,7 +657,7 @@ class LookupManager {
 			return;
 		}
 
-		throw new ModelErrorException('#[Inject] property must have a non primitive type.', $attribute->getFile(),
+		throw new ModelError('#[Inject] property must have a non primitive type.', $attribute->getFile(),
 				$attribute->getLine());
 	}
 
