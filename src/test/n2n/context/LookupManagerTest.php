@@ -16,7 +16,7 @@ use n2n\context\mock\InterfaceSessionScopedMock;
 use PHPUnit\Framework\TestCase;
 use n2n\context\config\SimpleLookupSession;
 use n2n\util\magic\MagicContext;
-use n2n\util\cache\impl\FileCacheStore;
+use n2n\cache\impl\fs\FileCacheStore;
 use n2n\context\mock\AttributeThreadScopedMock;
 use n2n\context\mock\InterfaceThreadScopedMock;
 use n2n\context\mock\SimpleClassMock;
@@ -25,7 +25,7 @@ use n2n\context\mock\InvalidInjectMock;
 use n2n\context\mock\InfiniteInjectionMock;
 use n2n\context\mock\InvalidInjectTypeMock;
 use n2n\util\magic\MagicObjectUnavailableException;
-use n2n\util\cache\impl\EphemeralCacheStore;
+use n2n\cache\impl\ephemeral\EphemeralCacheStore;
 
 class LookupManagerTest extends TestCase {
 	/**

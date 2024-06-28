@@ -24,7 +24,7 @@ namespace n2n\context;
 use n2n\util\UnserializationFailedException;
 use n2n\reflection\ReflectionUtils;
 use n2n\reflection\ReflectionContext;
-use n2n\util\cache\CacheStore;
+use n2n\cache\CacheStore;
 use n2n\util\StringUtils;
 use n2n\reflection\attribute\PropertyAttribute;
 use n2n\reflection\magic\MagicUtils;
