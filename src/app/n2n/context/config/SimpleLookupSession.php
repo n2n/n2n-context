@@ -21,10 +21,21 @@
  */
 namespace n2n\context\config;
 
+use n2n\util\crypt\TokenUtils;
+
 class SimpleLookupSession implements LookupSession {
-    private array $data = [];
-    
-    private function &nsData(string $namespace) {
+    private string $id;
+	private array $data = [];
+
+	function __construct(string $id = null) {
+		$this->id = $id ?? TokenUtils::randomToken();
+	}
+
+	public function getId(): string {
+		return $this->id;
+	}
+
+	private function &nsData(string $namespace) {
         if (!isset($this->data[$namespace])) {
             $this->data[$namespace] = [];
         }
@@ -51,7 +62,7 @@ class SimpleLookupSession implements LookupSession {
      * @param mixed $namespace
      * @param string $key
      */
-    public function remove(string $namespace, string $key) {
+    public function remove(string $namespace, string $key): void {
     	unset($this->nsData($namespace)[$key]);
     }
 }

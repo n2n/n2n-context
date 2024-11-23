@@ -22,6 +22,9 @@
 namespace n2n\context\config;
 
 interface LookupSession {
+
+	function getId(): string;
+
     /**
      * @param string $namespace
      * @param string $key
