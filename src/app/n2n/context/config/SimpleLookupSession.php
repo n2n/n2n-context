@@ -27,7 +27,7 @@ class SimpleLookupSession implements LookupSession {
     private string $id;
 	private array $data = [];
 
-	function __construct(string $id = null) {
+	function __construct(?string $id = null) {
 		$this->id = $id ?? TokenUtils::randomToken();
 	}
 
