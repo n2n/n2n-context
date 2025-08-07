@@ -16,7 +16,6 @@ use n2n\context\mock\InterfaceSessionScopedMock;
 use PHPUnit\Framework\TestCase;
 use n2n\context\config\SimpleLookupSession;
 use n2n\util\magic\MagicContext;
-use n2n\cache\impl\fs\FileCacheStore;
 use n2n\context\mock\AttributeThreadScopedMock;
 use n2n\context\mock\InterfaceThreadScopedMock;
 use n2n\context\mock\SimpleClassMock;
@@ -347,5 +346,33 @@ class LookupManagerTest extends TestCase {
 		$this->assertEquals(1, $requestScopedMock->terminateTimes);
 		$this->assertEquals(1, $sessionScopedMock->terminateTimes);
 		$this->assertEquals(1, $applicationScopedMock->terminateTimes);
+	}
+
+	function testInitInjectMock() {
+		/**
+		 * @var InjectMock $injectMock
+		 */
+		$this->assertTrue($this->lookupManager->has(InjectMock::class));
+		$injectMock = new InjectMock();
+		$this->lookupManager->init($injectMock);
+
+		$this->assertInstanceOf(AttributeLookupableMock::class, $injectMock->getAttributeLookupableMock());
+		$this->assertInstanceOf(AttributeRequestScopedMock::class, $injectMock->getAttributeLookupableMock()->requestScoped);
+
+		$this->assertInstanceOf(AttributeRequestScopedMock::class, $injectMock->getAttrRequestScopedMock());
+		$this->assertInstanceOf(AttributeApplicationScopedMock::class, $injectMock->getAttrRequestScopedMock()->getApplicationScoped());
+		$this->assertInstanceOf(InterfaceRequestScopedMock::class, $injectMock->getInterfaceRequestScopedMock());
+
+		$this->assertInstanceOf(AttributeSessionScopedMock::class, $injectMock->getAttributeSessionScopedMock());
+		$this->assertInstanceOf(AttributeLookupableMock::class, $injectMock->getAttributeSessionScopedMock()->lookupable);
+		$this->assertInstanceOf(InterfaceSessionScopedMock::class, $injectMock->getInterfaceSessionScopedMock());
+
+		$this->assertInstanceOf(AttributeApplicationScopedMock::class, $injectMock->getAttributeApplicationScopedMock());
+		$this->assertInstanceOf(InterfaceApplicationScopedMock::class, $injectMock->getInterfaceApplicationScopedMock());
+		$this->assertInstanceOf(LookupableMock::class, $injectMock->getAttributeApplicationScopedMock()->lookupable);
+
+		$this->assertInstanceOf(AttributeThreadScopedMock::class, $injectMock->getAttributeThreadScopedMock());
+		$this->assertInstanceOf(InterfaceThreadScopedMock::class, $injectMock->getInterfaceThreadScopedMock());
+		$this->assertInstanceOf(AttributeRequestScopedMock::class, $injectMock->getAttributeThreadScopedMock()->requestScoped);
 	}
 }

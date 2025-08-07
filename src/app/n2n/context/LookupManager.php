@@ -38,6 +38,7 @@ use n2n\context\attribute\Inject;
 use n2n\reflection\ObjectCreationFailedException;
 use n2n\util\type\TypeUtils;
 use n2n\util\magic\MagicObjectUnavailableException;
+use ReflectionClass;
 
 class LookupManager {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
@@ -202,6 +203,16 @@ class LookupManager {
 				'Must be marked Lookupable, ThreadScoped, RequestScoped, SessionScoped or ApplicationScoped: '
 				. $class->getName());
 	}
+
+	function init(object $obj): void {
+		$class = new ReflectionClass($obj);
+		$this->checkForSessionProperties($class, $obj);
+		$this->checkForApplicationProperties($class, $obj);
+		$this->checkForInjectProperties($class, $obj);
+		MagicUtils::init($obj, $this->magicContext);
+	}
+
+
 	/**
 	 * @param PropertyAttribute $attribute
 	 * @return ModelError
