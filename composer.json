@@ -26,7 +26,7 @@
 	"require" : {
 		"n2n/n2n-reflection" : "~7.4",
 		"n2n/n2n-util": "~7.4.3",
-		"n2n/n2n-cache" : "~7.4"
+		"n2n/n2n-cache" : "~7.5"
 	},
     "provide": {
       "psr/container-implementation": "1.0.0"

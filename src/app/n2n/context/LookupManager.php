@@ -39,6 +39,7 @@ use n2n\reflection\ObjectCreationFailedException;
 use n2n\util\type\TypeUtils;
 use n2n\util\magic\MagicObjectUnavailableException;
 use ReflectionClass;
+use n2n\cache\CharacteristicsList;
 
 class LookupManager {
 	const SESSION_KEY_PREFIX = 'lookupManager.sessionScoped.';
@@ -464,7 +465,7 @@ class LookupManager {
 		$className = $class->getName();
 		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class) as $applicationScopedAttr) {
 			$property = $applicationScopedAttr->getProperty();
-			$characteristics = array('prop' => $property->getName());
+			$characteristics = new CharacteristicsList(array('prop' => $property->getName()));
 
 			$property->setAccessible(true);
 
@@ -541,7 +542,7 @@ class LookupManager {
 	private function readApplicationModel(\ReflectionClass $class, $autoSerializable, &$serData) {
 		$className = $class->getName();
 
-		$cacheItem = $this->applicationCacheStore->get($className, array());
+		$cacheItem = $this->applicationCacheStore->get($className, new CharacteristicsList(array()));
 		if (null === $cacheItem) return null;
 
 		$serData = $cacheItem->getData();
@@ -556,7 +557,7 @@ class LookupManager {
 				}
 			} catch (UnserializationFailedException $e) {}
 
-			$this->applicationCacheStore->remove($className, array());
+			$this->applicationCacheStore->remove($className, new CharacteristicsList(array()));
 			return null;
 		}
 
@@ -566,7 +567,7 @@ class LookupManager {
 		try {
 			$this->callOnUnserialize($class, $obj, SerDataReader::createFromSerializedStr($serData));
 		} catch (UnserializationFailedException $e) {
-			$this->applicationCacheStore->remove($className, array());
+			$this->applicationCacheStore->remove($className, new CharacteristicsList(array()));
 			throw new LookupFailedException('Failed to unserialize application model: ' . $class->getName(), 0, $e);
 		}
 
@@ -586,7 +587,7 @@ class LookupManager {
 		}
 
 		if ($serData != $oldSerData) {
-			$this->applicationCacheStore->store($className, array(), $serData);
+			$this->applicationCacheStore->store($className, new CharacteristicsList(array()), $serData);
 		}
 	}
 
