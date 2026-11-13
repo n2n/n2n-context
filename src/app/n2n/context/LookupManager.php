@@ -230,11 +230,11 @@ class LookupManager {
 	private function checkoutLookupable(\ReflectionClass $class) {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
 
-		foreach ($attributeSet->getPropertyAttributesByName(SessionScoped::class) as $attribute) {
+		foreach ($attributeSet->getPropertyAttributesByName(SessionScoped::class, true) as $attribute) {
 			throw $this->createErrorException($attribute);
 		}
 
-		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class) as $attribute) {
+		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class, true) as $attribute) {
 			throw $this->createErrorException($attribute);
 		}
 
@@ -288,11 +288,11 @@ class LookupManager {
 	 */
 	private function checkForSessionProperties(\ReflectionClass $class, object $obj) {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
-		if (!$attributeSet->containsPropertyAttributeName(SessionScoped::class)) {
+		if (!$attributeSet->containsPropertyAttributeName(SessionScoped::class, true)) {
 			return;
 		}
 
-		foreach ($attributeSet->getPropertyAttributesByName(SessionScoped::class) as $sessionScopedAttr) {
+		foreach ($attributeSet->getPropertyAttributesByName(SessionScoped::class, true) as $sessionScopedAttr) {
 			$property = $sessionScopedAttr->getProperty();
 			$propertyName = $property->getName();
 
@@ -324,7 +324,7 @@ class LookupManager {
 	private function checkForInjectProperties(\ReflectionClass $class, object $obj) {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
 
-		foreach ($attributeSet->getPropertyAttributesByName(Inject::class) as $injectPropertyAttribute) {
+		foreach ($attributeSet->getPropertyAttributesByName(Inject::class, true) as $injectPropertyAttribute) {
 			$this->checkInjectPropertyHasType($injectPropertyAttribute);
 //			$this->checkInfiniteInjection($injectPropertyAttribute);
 
@@ -458,12 +458,12 @@ class LookupManager {
 	 */
 	private function checkForApplicationProperties(\ReflectionClass $class, $obj) {
 		$attributeSet = ReflectionContext::getAttributeSet($class);
-		if (!$attributeSet->containsPropertyAttributeName(ApplicationScoped::class))  {
+		if (!$attributeSet->containsPropertyAttributeName(ApplicationScoped::class, true))  {
 			return;
 		}
 
 		$className = $class->getName();
-		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class) as $applicationScopedAttr) {
+		foreach ($attributeSet->getPropertyAttributesByName(ApplicationScoped::class, true) as $applicationScopedAttr) {
 			$property = $applicationScopedAttr->getProperty();
 			$characteristics = new CharacteristicsList(array('prop' => $property->getName()));
 
