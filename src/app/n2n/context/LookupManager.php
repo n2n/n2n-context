@@ -296,7 +296,6 @@ class LookupManager {
 			$property = $sessionScopedAttr->getProperty();
 			$propertyName = $property->getName();
 
-			$property->setAccessible(true);
 
 			$key = self::SESSION_KEY_PREFIX
 					. $class->getName() . self::SESSION_CLASS_PROPERTY_KEY_SEPARATOR . $propertyName;
@@ -329,7 +328,6 @@ class LookupManager {
 //			$this->checkInfiniteInjection($injectPropertyAttribute);
 
 			$targetProperty = $injectPropertyAttribute->getProperty();
-			$targetProperty->setAccessible(true);
 			try {
 				$type = $targetProperty->getType();
 				$targetInjectable = $this->magicContext->lookup($type->getName(), !$type->allowsNull(),
@@ -467,7 +465,6 @@ class LookupManager {
 			$property = $applicationScopedAttr->getProperty();
 			$characteristics = new CharacteristicsList(array('prop' => $property->getName()));
 
-			$property->setAccessible(true);
 
 			$propValueSer = null;
 			if (null !== ($cacheItem = $this->applicationCacheStore->get($className, $characteristics))) {
@@ -617,7 +614,6 @@ class LookupManager {
 		foreach ($methods as $method) {
 			MagicUtils::validateMagicMethodSignature($method);
 
-			$method->setAccessible(true);
 			$magicMethodInvoker->invoke($obj, $method);
 		}
 	}
